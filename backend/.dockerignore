@@ -1,0 +1,5 @@
+_build
+deps
+.git
+.gitignore
+erl_crash.dump
