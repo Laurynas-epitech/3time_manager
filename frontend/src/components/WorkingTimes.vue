@@ -98,7 +98,7 @@ watch: {
 
       try {
         const response = await axios.get(
-  `http://localhost:4000/api/workingtime/${this.userId}`
+  `http://57.130.61.152:4000/api/workingtime/${this.userId}`
 );
 
         const data =

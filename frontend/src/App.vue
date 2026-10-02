@@ -212,7 +212,7 @@ export default {
     async refreshUsers(preferredUserId = null) {
       try {
         const response = await axios.get(
-          "http://localhost:4000/api/users"
+          "http://57.130.61.152:4000/api/users"
         );
 
         const data =

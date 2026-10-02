@@ -132,7 +132,7 @@ export default {
     async createUser() {
       try {
         const response = await axios.post(
-          "http://localhost:4000/api/users",
+          "http://57.130.61.152:4000/api/users",
           {
             user: {
               username: this.newUsername,
@@ -166,7 +166,7 @@ export default {
 
   try {
     const response = await axios.get(
-      `http://localhost:4000/api/users/${this.userId}`
+      `http://57.130.61.152:4000/api/users/${this.userId}`
     );
 
     const data =
@@ -194,7 +194,7 @@ export default {
 
       try {
         await axios.put(
-          `http://localhost:4000/api/users/${this.userId}`,
+          `http://57.130.61.152:4000/api/users/${this.userId}`,
           {
             user: {
               username: this.editUsername,
@@ -223,7 +223,7 @@ export default {
 
       try {
         await axios.delete(
-          `http://localhost:4000/api/users/${this.userId}`
+          `http://57.130.61.152:4000/api/users/${this.userId}`
         );
 
         this.$emit("user-deleted");

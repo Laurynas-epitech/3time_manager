@@ -146,7 +146,7 @@ watch: {
 
   try {
     await axios.post(
-      `http://localhost:4000/api/workingTime/${this.userId}`,
+      `http://57.130.61.152:4000/api/workingTime/${this.userId}`,
       this.getPayload()
     );
 
@@ -167,7 +167,7 @@ watch: {
 
   try {
     await axios.put(
-      `http://localhost:4000/api/workingTime/${this.userId}/${this.workingTime.id}`,
+      `http://57.130.61.152:4000/api/workingTime/${this.userId}/${this.workingTime.id}`,
       this.getPayload()
     );
 
@@ -195,7 +195,7 @@ watch: {
 
   try {
     await axios.delete(
-      `http://localhost:4000/api/workingTime/${this.userId}/${this.workingTime.id}`
+      `http://57.130.61.152:4000/api/workingTime/${this.userId}/${this.workingTime.id}`
     );
 
     this.start = "";

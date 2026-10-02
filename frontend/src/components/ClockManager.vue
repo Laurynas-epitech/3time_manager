@@ -81,7 +81,7 @@ export default {
 
       try {
         const response = await axios.get(
-  `http://localhost:4000/api/clock/${this.userId}`
+  `http://57.130.61.152:4000/api/clock/${this.userId}`
 );
 
         const data =
@@ -121,7 +121,7 @@ export default {
 
       try {
         await axios.post(
-  `http://localhost:4000/api/clock/${this.userId}`,
+  `http://57.130.61.152:4000/api/clock/${this.userId}`,
   {
     clock: {
       time: new Date().toISOString(),
