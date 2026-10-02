@@ -50,10 +50,7 @@ defmodule TimeManagerWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
 
-  plug CORSPlug,
-  origin: ["http://localhost:5173"],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  headers: ["Content-Type", "Authorization"]
+
   plug Corsica,
   origins: ["http://57.130.61.152:5173"],
   allow_headers: :all,
