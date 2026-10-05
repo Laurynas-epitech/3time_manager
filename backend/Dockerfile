@@ -17,8 +17,9 @@ RUN mix deps.compile
 
 COPY . .
 
-RUN mix compile
+RUN mix deps.get && mix compile
 
 EXPOSE 4000
 
-CMD ["mix", "phx.server"]
+# Migrate, seed the admin (idempotent), then start the server.
+CMD ["sh", "-c", "mix ecto.migrate && mix run priv/repo/seeds.exs && mix phx.server"]

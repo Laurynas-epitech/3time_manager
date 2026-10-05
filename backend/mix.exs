@@ -40,6 +40,8 @@ defmodule TimeManager.MixProject do
   defp deps do
     [
       {:corsica, "~> 2.1"},
+      {:joken, "~> 2.6"},
+      {:bcrypt_elixir, "~> 3.0"},
       {:phoenix, "~> 1.8.14"},
       {:phoenix_ecto, "~> 4.5"},
       {:ecto_sql, "~> 3.13"},

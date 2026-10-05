@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "../api";
 
 export default {
   name: "WorkingTime",
@@ -145,8 +145,8 @@ watch: {
   if (!this.userId) return;
 
   try {
-    await axios.post(
-      `http://57.130.61.152:4000/api/workingTime/${this.userId}`,
+    await api.post(
+      `/workingTime/${this.userId}`,
       this.getPayload()
     );
 
@@ -166,8 +166,8 @@ watch: {
   if (!this.workingTime) return;
 
   try {
-    await axios.put(
-      `http://57.130.61.152:4000/api/workingTime/${this.userId}/${this.workingTime.id}`,
+    await api.put(
+      `/workingTime/${this.userId}/${this.workingTime.id}`,
       this.getPayload()
     );
 
@@ -194,8 +194,8 @@ watch: {
   if (!confirmed) return;
 
   try {
-    await axios.delete(
-      `http://57.130.61.152:4000/api/workingTime/${this.userId}/${this.workingTime.id}`
+    await api.delete(
+      `/workingTime/${this.userId}/${this.workingTime.id}`
     );
 
     this.start = "";

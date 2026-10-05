@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "../api";
 
 import {
   Chart as ChartJS,
@@ -247,8 +247,8 @@ export default {
     }
 
     try {
-      const response = await axios.get(
-        `http://57.130.61.152:4000/api/chartManager/${this.userId}`
+      const response = await api.get(
+        `/chartManager/${this.userId}`
       );
 
       const data =

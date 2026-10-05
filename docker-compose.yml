@@ -10,17 +10,24 @@ services:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
 
   backend:
     build:
       context: ./backend
     container_name: time_manager_backend
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "4000:4000"
     environment:
       MIX_ENV: dev
+      JWT_SECRET: change-me-in-production-please-0123456789
 
   frontend:
     build:

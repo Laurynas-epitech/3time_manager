@@ -33,6 +33,7 @@
     </div>
 
     <button
+      v-if="canClock"
       class="clock-button"
       @click="clock"
     >
@@ -46,7 +47,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "../api";
 
 export default {
   name: "ClockManager",
@@ -55,6 +56,11 @@ export default {
     userId: {
       type: Number,
       required: true,
+    },
+
+    canClock: {
+      type: Boolean,
+      default: true,
     },
   },
 
@@ -80,8 +86,8 @@ export default {
       if (!this.userId) return;
 
       try {
-        const response = await axios.get(
-  `http://57.130.61.152:4000/api/clock/${this.userId}`
+        const response = await api.get(
+  `/clock/${this.userId}`
 );
 
         const data =
@@ -120,8 +126,8 @@ export default {
       if (!this.userId) return;
 
       try {
-        await axios.post(
-  `http://57.130.61.152:4000/api/clock/${this.userId}`,
+        await api.post(
+  `/clock/${this.userId}`,
   {
     clock: {
       time: new Date().toISOString(),

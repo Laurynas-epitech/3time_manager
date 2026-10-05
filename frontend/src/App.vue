@@ -7,259 +7,78 @@
           <p>Manage employee working time and attendance.</p>
         </div>
 
-        <div class="user-selector">
-          <label>Active user</label>
+        <div
+          v-if="user"
+          class="session"
+        >
+          <nav class="nav">
+            <router-link to="/">Dashboard</router-link>
 
-          <select v-model.number="selectedUserId">
-            <option value="" disabled>
-              Select a user
-            </option>
-
-            <option
-              v-for="user in users"
-              :key="user.id"
-              :value="user.id"
+            <router-link
+              v-if="isManagerOrAdmin"
+              to="/teams"
             >
-              {{ user.username }} — {{ user.email }}
-            </option>
-          </select>
+              Teams
+            </router-link>
+
+            <router-link
+              v-if="isAdmin"
+              to="/admin"
+            >
+              Admin
+            </router-link>
+
+            <router-link to="/profile">Profile</router-link>
+          </nav>
+
+          <span>
+            {{ user.username }}
+            <span
+              class="role-badge"
+              :class="user.role"
+            >
+              {{ user.role }}
+            </span>
+          </span>
+
+          <button
+            class="secondary"
+            @click="logout"
+          >
+            Log out
+          </button>
         </div>
       </div>
     </header>
 
     <main class="dashboard">
-      <!-- USER MANAGEMENT -->
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <h2>User Management</h2>
-            <p>Create users or manage the currently selected account.</p>
-          </div>
-        </div>
-
-        <User
-          :user-id="selectedUserId"
-          :user="selectedUser"
-          @user-created="handleUserCreated"
-          @user-updated="refreshUsers"
-          @user-deleted="handleUserDeleted"
-        />
-      </section>
-
-      <!-- NO USER -->
-      <section
-        v-if="!selectedUserId"
-        class="empty-user"
-      >
-        <div class="empty-icon">👤</div>
-
-        <h2>Select a user</h2>
-
-        <p>
-          Choose a user from the menu above to manage their working
-          time, clock status and statistics.
-        </p>
-      </section>
-
-      <!-- DASHBOARD FOR SELECTED USER -->
-      <template v-else>
-        <section class="profile-banner">
-          <div>
-            <span class="profile-label">Active account</span>
-
-            <h2>{{ selectedUser?.username }}</h2>
-
-            <p>{{ selectedUser?.email }}</p>
-          </div>
-
-          <div class="profile-id">
-            User #{{ selectedUserId }}
-          </div>
-        </section>
-
-        <div class="two-column">
-          <!-- CLOCK -->
-          <section class="card">
-            <div class="card-header">
-              <div>
-                <h2>Clock</h2>
-                <p>Current attendance status.</p>
-              </div>
-            </div>
-
-            <ClockManager
-              :user-id="selectedUserId"
-            />
-          </section>
-
-          <!-- ADD / EDIT WORKING TIME -->
-          <section class="card">
-            <div class="card-header">
-              <div>
-                <h2>
-                  {{
-                    selectedWorkingTime
-                      ? "Edit Working Time"
-                      : "Add Working Time"
-                  }}
-                </h2>
-
-                <p>
-                  {{
-                    selectedWorkingTime
-                      ? "Update or delete the selected entry."
-                      : "Add a new working-time entry."
-                  }}
-                </p>
-              </div>
-            </div>
-
-            <WorkingTime
-              :user-id="selectedUserId"
-              :working-time="selectedWorkingTime"
-              @saved="handleWorkingTimeSaved"
-              @deleted="handleWorkingTimeSaved"
-              @cancel-edit="selectedWorkingTime = null"
-            />
-          </section>
-        </div>
-
-        <!-- HISTORY -->
-        <section class="card">
-          <div class="card-header">
-            <div>
-              <h2>Working Time History</h2>
-              <p>
-                All recorded working times for
-                {{ selectedUser?.username }}.
-              </p>
-            </div>
-          </div>
-
-          <WorkingTimes
-  ref="workingTimes"
-  :user-id="selectedUserId"
-  @edit-working-time="selectedWorkingTime = $event"
-/>
-        </section>
-
-        <!-- CHARTS -->
-        <section class="card">
-          <div class="card-header">
-            <div>
-              <h2>Statistics</h2>
-              <p>Overview of recorded hours.</p>
-            </div>
-          </div>
-
-          <ChartManager
-            ref="chartManager"
-            :user-id="selectedUserId"
-          />
-        </section>
-      </template>
+      <router-view />
     </main>
   </div>
 </template>
 
 <script>
-import axios from "axios";
-
-import User from "./components/user.vue";
-import WorkingTimes from "./components/WorkingTimes.vue";
-import WorkingTime from "./components/WorkingTime.vue";
-import ClockManager from "./components/ClockManager.vue";
-import ChartManager from "./components/ChartManager.vue";
+import auth from "./auth";
 
 export default {
-  components: {
-    User,
-    WorkingTimes,
-    WorkingTime,
-    ClockManager,
-    ChartManager,
-  },
-
-  data() {
-    return {
-      users: [],
-      selectedUserId: "",
-      selectedWorkingTime: null,
-    };
-  },
-
   computed: {
-    selectedUser() {
-      return (
-        this.users.find(
-          (user) => user.id === this.selectedUserId
-        ) || null
-      );
+    user() {
+      return auth.state.user;
     },
-  },
 
-  watch: {
-    selectedUserId() {
-      this.selectedWorkingTime = null;
+    isAdmin() {
+      return auth.hasRole("admin");
     },
-  },
 
-  mounted() {
-    this.refreshUsers();
+    isManagerOrAdmin() {
+      return auth.hasRole("manager", "admin");
+    },
   },
 
   methods: {
-    async refreshUsers(preferredUserId = null) {
-      try {
-        const response = await axios.get(
-          "http://57.130.61.152:4000/api/users"
-        );
-
-        const data =
-          response.data.data ?? response.data;
-
-        this.users =
-          Array.isArray(data) ? data : [];
-
-        if (preferredUserId) {
-          this.selectedUserId = preferredUserId;
-          return;
-        }
-
-        if (
-          this.selectedUserId &&
-          !this.users.some(
-            (user) => user.id === this.selectedUserId
-          )
-        ) {
-          this.selectedUserId = "";
-        }
-      } catch (error) {
-        console.error("LOAD USERS ERROR:", error);
-      }
-    },
-
-    async handleUserCreated(userId) {
-      await this.refreshUsers(userId);
-    },
-
-    async handleUserDeleted() {
-      this.selectedUserId = "";
-      this.selectedWorkingTime = null;
-
-      await this.refreshUsers();
-    },
-
-    async handleWorkingTimeSaved() {
-      this.selectedWorkingTime = null;
-
-      if (this.$refs.workingTimes) {
-        await this.$refs.workingTimes.getWorkingTimes();
-      }
-
-      if (this.$refs.chartManager) {
-        await this.$refs.chartManager.getWorkingTimes();
-      }
+    async logout() {
+      await auth.logout();
+      this.$router.push({ name: "login" });
     },
   },
 };
@@ -275,6 +94,13 @@ body,
 #app {
   margin: 0;
   min-height: 100%;
+}
+
+/* Undo the Vite template defaults from style.css */
+#app {
+  width: 100%;
+  text-align: left;
+  border-inline: none;
 }
 
 body {
@@ -544,6 +370,151 @@ button.danger:hover {
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+
+.view {
+  display: grid;
+  gap: 22px;
+}
+
+/* NAVIGATION */
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nav a {
+  color: #d1d5db;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.nav a:hover {
+  background: #1f2937;
+  color: white;
+}
+
+.nav a.router-link-exact-active {
+  background: #312e81;
+  color: white;
+}
+
+.session {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #d1d5db;
+  font-size: 14px;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.role-badge.admin {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.role-badge.manager {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* SHARED FORM BITS */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 15px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.error-msg {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 14px;
+}
+
+.success-msg {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 14px;
+}
+
+select {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  background: white;
+  color: #111827;
+}
+
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+table.data th,
+table.data td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #eef0f3;
+  vertical-align: middle;
+}
+
+table.data th {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+@media (max-width: 650px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* RESPONSIVE */

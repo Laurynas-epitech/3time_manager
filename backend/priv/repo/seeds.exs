@@ -1,11 +1,21 @@
-# Script for populating the database. You can run it as:
+# Creates the default admin. Safe to run several times.
 #
 #     mix run priv/repo/seeds.exs
 #
-# Inside the script, you can read and write to any of your
-# repositories directly:
-#
-#     TimeManager.Repo.insert!(%TimeManager.SomeSchema{})
-#
-# We recommend using the bang functions (`insert!`, `update!`
-# and so on) as they will fail if something goes wrong.
+# Credentials can be changed with ADMIN_EMAIL / ADMIN_PASSWORD.
+
+alias TimeManager.Accounts
+
+email = System.get_env("ADMIN_EMAIL", "admin@timemanager.local")
+password = System.get_env("ADMIN_PASSWORD", "admin1234")
+
+case Accounts.get_user_by_email(email) do
+  nil ->
+    {:ok, _} =
+      Accounts.create_user(%{"username" => "admin", "email" => email, "password" => password}, "admin")
+
+    IO.puts("Admin created: #{email} / #{password}")
+
+  _user ->
+    IO.puts("Admin already exists: #{email}")
+end

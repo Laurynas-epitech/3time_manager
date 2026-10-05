@@ -6,29 +6,33 @@ defmodule TimeManagerWeb.ClockController do
   alias TimeManager.Repo
   alias TimeManager.TimeTracking
   alias TimeManager.TimeTracking.Clock
+  alias TimeManagerWeb.Authorization
 
   action_fallback TimeManagerWeb.FallbackController
 
   def show(conn, %{"userID" => user_id}) do
-    clocks =
-      from(c in Clock,
-        where: c.user_id == ^user_id,
-        order_by: [asc: c.time]
-      )
-      |> Repo.all()
+    with :ok <- authorize(Authorization.can_view_user?(conn.assigns.current_user, user_id)) do
+      clocks =
+        from(c in Clock,
+          where: c.user_id == ^user_id,
+          order_by: [asc: c.time]
+        )
+        |> Repo.all()
 
-    render(conn, :index, clocks: clocks)
+      render(conn, :index, clocks: clocks)
+    end
   end
 
   def create(conn, %{"userID" => user_id, "clock" => clock_params}) do
-    clock_params =
-      Map.put(clock_params, "user_id", user_id)
-
-    with {:ok, %Clock{} = clock} <-
-           TimeTracking.create_clock(clock_params) do
+    with :ok <- authorize(Authorization.can_clock?(conn.assigns.current_user, user_id)),
+         clock_params = Map.put(clock_params, "user_id", user_id),
+         {:ok, %Clock{} = clock} <- TimeTracking.create_clock(clock_params) do
       conn
       |> put_status(:created)
       |> render(:show, clock: clock)
     end
   end
+
+  defp authorize(true), do: :ok
+  defp authorize(_), do: {:error, :forbidden}
 end

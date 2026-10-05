@@ -14,11 +14,37 @@ defmodule TimeManagerWeb.FallbackController do
     |> render(:error, changeset: changeset)
   end
 
+  def call(conn, {:error, :invalid_credentials}) do
+    error(conn, :unauthorized, "Invalid email or password")
+  end
+
+  def call(conn, {:error, :unauthorized}) do
+    error(conn, :unauthorized, "Unauthorized")
+  end
+
+  def call(conn, {:error, :forbidden}) do
+    error(conn, :forbidden, "Forbidden")
+  end
+
+  def call(conn, {:error, :invalid_role}) do
+    error(conn, :unprocessable_entity, "Unknown role")
+  end
+
+  def call(conn, {:error, :bad_request}) do
+    error(conn, :bad_request, "Bad request")
+  end
+
   # This clause is an example of how to handle resources that cannot be found.
   def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
     |> put_view(html: TimeManagerWeb.ErrorHTML, json: TimeManagerWeb.ErrorJSON)
     |> render(:"404")
+  end
+
+  defp error(conn, status, detail) do
+    conn
+    |> put_status(status)
+    |> json(%{errors: %{detail: detail}})
   end
 end
