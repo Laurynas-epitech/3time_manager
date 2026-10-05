@@ -14,7 +14,7 @@
       <strong>No working times yet.</strong>
 
       <span>
-        Add a working-time entry above to get started.
+        {{ canEdit ? "Add a working-time entry above to get started." : "Your manager will add them here." }}
       </span>
     </div>
 
@@ -44,6 +44,7 @@
         </div>
 
         <button
+          v-if="canEdit"
           class="secondary"
           @click="$emit(
             'edit-working-time',
@@ -58,7 +59,7 @@
 </template>
 
 <script>
-import axios from "axios";
+import api from "../api";
 
 export default {
   name: "WorkingTimes",
@@ -68,7 +69,14 @@ export default {
     type: Number,
     required: true,
   },
+
+  canEdit: {
+    type: Boolean,
+    default: false,
+  },
 },
+
+emits: ["edit-working-time"],
 
 data() {
   return {
@@ -97,8 +105,8 @@ watch: {
       this.loading = true;
 
       try {
-        const response = await axios.get(
-  `http://57.130.61.152:4000/api/workingtime/${this.userId}`
+        const response = await api.get(
+  `/workingtime/${this.userId}`
 );
 
         const data =

@@ -16,7 +16,7 @@ config :time_manager, TimeManagerWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "...",
+  secret_key_base: "dev-only-secret-key-base-0123456789abcdefghijklmnopqrstuvwxyz-ABCDEFGHIJ",
   watchers: []
 
 # Enable dev routes

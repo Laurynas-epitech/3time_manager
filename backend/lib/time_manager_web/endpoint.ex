@@ -51,9 +51,12 @@ defmodule TimeManagerWeb.Endpoint do
   plug Plug.Session, @session_options
 
 
+  # allow_credentials is required so the browser sends the JWT cookie.
   plug Corsica,
-  origins: ["http://57.130.61.152:5173"],
-  allow_headers: :all,
-  allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    origins: ["http://localhost:5173", "http://127.0.0.1:5173", "http://57.130.61.152:5173"],
+    allow_credentials: true,
+    allow_headers: :all,
+    allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+
   plug TimeManagerWeb.Router
 end

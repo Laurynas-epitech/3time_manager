@@ -1,21 +1,22 @@
 defmodule TimeManager.AccountsFixtures do
-  @moduledoc """
-  This module defines test helpers for creating
-  entities via the `TimeManager.Accounts` context.
-  """
+  @moduledoc "Test helpers for users."
 
-  @doc """
-  Generate a user.
-  """
-  def user_fixture(attrs \\ %{}) do
-    {:ok, user} =
+  def unique_email, do: "user#{System.unique_integer([:positive])}@example.com"
+
+  def valid_password, do: "secret123"
+
+  @doc "Creates a user with the given role (employee by default)."
+  def user_fixture(attrs \\ %{}, role \\ "employee") do
+    attrs =
       attrs
+      |> Map.new(fn {k, v} -> {to_string(k), v} end)
       |> Enum.into(%{
-        email: "some email",
-        username: "some username"
+        "username" => "some username",
+        "email" => unique_email(),
+        "password" => valid_password()
       })
-      |> TimeManager.Accounts.create_user()
 
+    {:ok, user} = TimeManager.Accounts.create_user(attrs, role)
     user
   end
 end
