@@ -1,5 +1,12 @@
 <template>
   <div>
+    <p
+      v-if="fromCache"
+      class="cache-note"
+    >
+      Offline: showing the last saved copy.
+    </p>
+
     <div
       v-if="loading"
       class="empty-state"
@@ -59,7 +66,7 @@
 </template>
 
 <script>
-import api from "../api";
+import { cachedGet } from "../offline";
 
 export default {
   name: "WorkingTimes",
@@ -82,6 +89,7 @@ data() {
   return {
     workingTimes: [],
     loading: false,
+    fromCache: false,
   };
 },
 
@@ -95,6 +103,14 @@ watch: {
   },
 },
 
+  mounted() {
+    window.addEventListener("tm:synced", this.getWorkingTimes);
+  },
+
+  unmounted() {
+    window.removeEventListener("tm:synced", this.getWorkingTimes);
+  },
+
   methods: {
     async getWorkingTimes() {
       if (!this.userId) {
@@ -105,12 +121,11 @@ watch: {
       this.loading = true;
 
       try {
-        const response = await api.get(
-  `/workingtime/${this.userId}`
-);
+        const response = await cachedGet(`/workingtime/${this.userId}`);
 
-        const data =
-          response.data.data ?? response.data;
+        this.fromCache = response.fromCache;
+
+        const data = response.data.data ?? response.data;
 
         this.workingTimes =
           Array.isArray(data) ? data : [];
@@ -229,5 +244,11 @@ watch: {
   .working-row {
     grid-template-columns: 1fr;
   }
+}
+
+.cache-note {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #92400e;
 }
 </style>

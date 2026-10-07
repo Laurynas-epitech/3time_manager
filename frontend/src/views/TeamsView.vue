@@ -332,4 +332,21 @@ export default {
 .empty {
   color: #6b7280;
 }
+
+/* Mobile: hide the email column, stack the header */
+@media (max-width: 768px) {
+  table.data th:nth-child(2),
+  table.data td:nth-child(2) {
+    display: none;
+  }
+
+  .team-header .actions {
+    width: 100%;
+  }
+
+  .add-member select {
+    max-width: none;
+    min-width: 0;
+  }
+}
 </style>

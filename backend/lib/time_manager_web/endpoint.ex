@@ -53,7 +53,15 @@ defmodule TimeManagerWeb.Endpoint do
 
   # allow_credentials is required so the browser sends the JWT cookie.
   plug Corsica,
-    origins: ["http://localhost:5173", "http://127.0.0.1:5173", "http://57.130.61.152:5173"],
+    origins: [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://57.130.61.152:5173",
+      # Android app (Capacitor WebView)
+      "http://localhost",
+      "https://localhost",
+      "capacitor://localhost"
+    ],
     allow_credentials: true,
     allow_headers: :all,
     allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]

@@ -18,11 +18,18 @@
       />
     </div>
 
+    <p
+      v-if="!online"
+      class="offline-note"
+    >
+      You're offline. Adding or editing working times needs a connection.
+    </p>
+
     <div class="actions">
       <button
         v-if="!workingTime"
         @click="createWorkingTime"
-        :disabled="!start || !end"
+        :disabled="!start || !end || !online"
       >
         Add Working Time
       </button>
@@ -30,7 +37,7 @@
       <template v-else>
         <button
           @click="updateWorkingTime"
-          :disabled="!start || !end"
+          :disabled="!start || !end || !online"
         >
           Save Changes
         </button>
@@ -44,6 +51,7 @@
 
         <button
           class="danger"
+          :disabled="!online"
           @click="deleteWorkingTime"
         >
           Delete
@@ -55,6 +63,7 @@
 
 <script>
 import api from "../api";
+import { online } from "../offline";
 
 export default {
   name: "WorkingTime",
@@ -82,6 +91,12 @@ data() {
     start: "",
     end: "",
   };
+},
+
+computed: {
+  online() {
+    return online.value;
+  },
 },
 
 watch: {
@@ -244,5 +259,14 @@ label {
   gap: 8px;
 
   margin-top: 5px;
+}
+
+.offline-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 13px;
 }
 </style>

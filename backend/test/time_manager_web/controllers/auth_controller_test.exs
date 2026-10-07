@@ -38,6 +38,38 @@ defmodule TimeManagerWeb.AuthControllerTest do
     assert %{"id" => ^id} = json_response(me, 200)["data"]
   end
 
+  test "mobile login returns the JWT, usable as a bearer token", %{conn: conn} do
+    user = user_fixture()
+
+    resp = post(conn, ~p"/api/auth/login", email: user.email, password: valid_password(), mobile: true)
+    assert %{"token" => jwt, "csrf_token" => csrf} = json_response(resp, 200)
+
+    me =
+      build_conn()
+      |> put_req_header("accept", "application/json")
+      |> put_req_header("authorization", "Bearer " <> jwt)
+      |> put_req_header("x-csrf-token", csrf)
+      |> get(~p"/api/auth/me")
+
+    assert json_response(me, 200)["data"]["id"] == user.id
+
+    # The CSRF check still applies to bearer tokens.
+    forged =
+      build_conn()
+      |> put_req_header("accept", "application/json")
+      |> put_req_header("authorization", "Bearer " <> jwt)
+      |> put_req_header("x-csrf-token", "forged")
+      |> get(~p"/api/auth/me")
+
+    assert json_response(forged, 401)
+  end
+
+  test "web login never puts the JWT in the body", %{conn: conn} do
+    user = user_fixture()
+    resp = post(conn, ~p"/api/auth/login", email: user.email, password: valid_password())
+    refute Map.has_key?(json_response(resp, 200), "token")
+  end
+
   test "login with a wrong password is rejected", %{conn: conn} do
     user = user_fixture()
     conn = post(conn, ~p"/api/auth/login", email: user.email, password: "nope-nope")

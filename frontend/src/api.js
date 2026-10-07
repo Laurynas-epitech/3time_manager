@@ -1,4 +1,5 @@
 import axios from "axios";
+import { isNative } from "./native";
 
 // Same host as the page, port 4000. Works on localhost and on the server
 // (57.130.61.152) without changing the code. Can be overridden with VITE_API_URL.
@@ -14,10 +15,25 @@ export const csrfStorage = {
   clear: () => localStorage.removeItem(CSRF_KEY),
 };
 
+// Android app only: the JWT is sent as "Authorization: Bearer", because the
+// cookie is not reliable between the app's WebView and the API.
+// In the browser the JWT stays in the HTTP-only cookie and this is never set.
+const JWT_KEY = "tm_jwt";
+
+export const tokenStorage = {
+  get: () => (isNative ? localStorage.getItem(JWT_KEY) : null),
+  set: (token) => {
+    if (isNative && token) localStorage.setItem(JWT_KEY, token);
+  },
+  clear: () => localStorage.removeItem(JWT_KEY),
+};
+
 const api = axios.create({
   baseURL,
   // Sends the HTTP-only JWT cookie with every request.
   withCredentials: true,
+  // Fail fast on a bad connection, so the offline mode kicks in.
+  timeout: 8000,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -28,6 +44,12 @@ api.interceptors.request.use((config) => {
 
   if (csrf) {
     config.headers["X-CSRF-Token"] = csrf;
+  }
+
+  const jwt = tokenStorage.get();
+
+  if (jwt) {
+    config.headers.Authorization = `Bearer ${jwt}`;
   }
 
   return config;
