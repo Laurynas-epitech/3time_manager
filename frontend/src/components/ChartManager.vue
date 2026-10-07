@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import api from "../api";
+import { cachedGet } from "../offline";
 
 import {
   Chart as ChartJS,
@@ -247,9 +247,7 @@ export default {
     }
 
     try {
-      const response = await api.get(
-        `/chartManager/${this.userId}`
-      );
+      const response = await cachedGet(`/chartManager/${this.userId}`);
 
       const data =
         response.data.data ?? response.data;

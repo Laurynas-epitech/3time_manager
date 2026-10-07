@@ -13,9 +13,11 @@
 
         <strong>
           {{
-            clockIn
-              ? "Currently working"
-              : "Not working"
+            !loaded
+              ? "Checking..."
+              : clockIn
+                ? "Currently working"
+                : "Not working"
           }}
         </strong>
       </div>
@@ -32,9 +34,17 @@
       </strong>
     </div>
 
+    <p
+      v-if="pending"
+      class="offline-note"
+    >
+      Saved on this device. It will sync automatically when you're back online.
+    </p>
+
     <button
       v-if="canClock"
       class="clock-button"
+      :disabled="busy || !loaded"
       @click="clock"
     >
       {{
@@ -47,7 +57,9 @@
 </template>
 
 <script>
-import api from "../api";
+import auth from "../auth";
+import { cachedGet, queueClock, pendingClocks } from "../offline";
+import { vibrate, scheduleClockOutReminder, cancelClockOutReminder } from "../native";
 
 export default {
   name: "ClockManager",
@@ -66,9 +78,31 @@ export default {
 
   data() {
     return {
-      startDateTime: null,
-      clockIn: false,
+      serverClocks: [],
+      busy: false,
+      loaded: false,
     };
+  },
+
+  computed: {
+    // Clock actions waiting to be sent (offline).
+    pending() {
+      return pendingClocks(this.userId).length;
+    },
+
+    // Server history + unsynced actions: the status is right even offline.
+    latest() {
+      const all = [...this.serverClocks, ...pendingClocks(this.userId)];
+      return all.length ? all[all.length - 1] : null;
+    },
+
+    clockIn() {
+      return !!this.latest?.status;
+    },
+
+    startDateTime() {
+      return this.clockIn ? this.latest.time : null;
+    },
   },
 
   watch: {
@@ -76,9 +110,18 @@ export default {
       immediate: true,
 
       handler() {
+        this.loaded = false;
         this.refresh();
       },
     },
+  },
+
+  mounted() {
+    window.addEventListener("tm:synced", this.refresh);
+  },
+
+  unmounted() {
+    window.removeEventListener("tm:synced", this.refresh);
   },
 
   methods: {
@@ -86,68 +129,41 @@ export default {
       if (!this.userId) return;
 
       try {
-        const response = await api.get(
-  `/clock/${this.userId}`
-);
-
-        const data =
-          response.data.data ?? response.data;
-
-        if (
-          Array.isArray(data) &&
-          data.length > 0
-        ) {
-          const latestClock =
-            data[data.length - 1];
-
-          this.clockIn =
-            latestClock.status;
-
-          this.startDateTime =
-            latestClock.status
-              ? latestClock.time
-              : null;
-        } else {
-          this.clockIn = false;
-          this.startDateTime = null;
-        }
+        const { data } = await cachedGet(`/clock/${this.userId}`);
+        const clocks = data.data ?? data;
+        this.serverClocks = Array.isArray(clocks) ? clocks : [];
       } catch (error) {
-        console.error(
-          "REFRESH CLOCK ERROR:",
-          error
-        );
-
-        this.clockIn = false;
-        this.startDateTime = null;
+        console.error("REFRESH CLOCK ERROR:", error);
+        this.serverClocks = [];
+      } finally {
+        this.loaded = true;
       }
     },
 
     async clock() {
-      if (!this.userId) return;
+      if (!this.userId || this.busy) return;
+
+      this.busy = true;
 
       try {
-        await api.post(
-  `/clock/${this.userId}`,
-  {
-    clock: {
-      time: new Date().toISOString(),
-      status: !this.clockIn,
-    },
-  }
-);
-        await this.refresh();
-      } catch (error) {
-        console.error(
-          "CLOCK ERROR:",
-          error
-        );
+        const status = !this.clockIn;
+
+        // Saved locally first with the current time, sent when possible.
+        const action = await queueClock(this.userId, status);
+
+        vibrate("success");
+
+        if (this.userId === auth.state.user?.id) {
+          if (status) scheduleClockOutReminder(action.time);
+          else cancelClockOutReminder();
+        }
+      } finally {
+        this.busy = false;
       }
     },
 
     formatDateTime(value) {
-      return new Date(
-        value
-      ).toLocaleString(undefined, {
+      return new Date(value).toLocaleString(undefined, {
         day: "2-digit",
         month: "short",
         hour: "2-digit",
@@ -232,5 +248,14 @@ export default {
 .clock-button {
   width: 100%;
   padding: 13px;
+}
+
+.offline-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 13px;
 }
 </style>

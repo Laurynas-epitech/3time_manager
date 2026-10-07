@@ -1,6 +1,13 @@
 <template>
-  <div class="app">
-    <header class="topbar">
+  <div
+    class="app"
+    :class="{ mobile: isMobile }"
+  >
+    <!-- DESKTOP HEADER -->
+    <header
+      v-if="!isMobile"
+      class="topbar"
+    >
       <div class="topbar-content">
         <div>
           <h1>Time Manager</h1>
@@ -51,16 +58,43 @@
       </div>
     </header>
 
-    <main class="dashboard">
+    <!-- MOBILE HEADER -->
+    <header
+      v-else
+      class="m-header"
+    >
+      <span class="m-title">{{ pageTitle }}</span>
+
+      <span
+        v-if="user"
+        class="role-badge"
+        :class="user.role"
+      >
+        {{ user.role }}
+      </span>
+    </header>
+
+    <SyncBanner />
+
+    <main :class="isMobile ? 'm-main' : 'dashboard'">
       <router-view />
     </main>
+
+    <!-- MOBILE NAVIGATION: tab bar instead of a burger menu -->
+    <TabBar v-if="isMobile && user" />
   </div>
 </template>
 
 <script>
 import auth from "./auth";
+import { isMobile } from "./layout";
+import { online } from "./offline";
+import TabBar from "./components/TabBar.vue";
+import SyncBanner from "./components/SyncBanner.vue";
 
 export default {
+  components: { TabBar, SyncBanner },
+
   computed: {
     user() {
       return auth.state.user;
@@ -73,12 +107,32 @@ export default {
     isManagerOrAdmin() {
       return auth.hasRole("manager", "admin");
     },
+
+    isMobile() {
+      return isMobile.value;
+    },
+
+    pageTitle() {
+      return this.$route.meta.title || "Time Manager";
+    },
+
+    online() {
+      return online.value;
+    },
+  },
+
+  watch: {
+    // Session restored offline: confirm it with the server once back online.
+    online(isOnline) {
+      if (isOnline && auth.state.offlineSession) auth.fetchMe();
+    },
   },
 
   methods: {
     async logout() {
-      await auth.logout();
-      this.$router.push({ name: "login" });
+      if (await auth.logoutWithConfirm()) {
+        this.$router.push({ name: "login" });
+      }
     },
   },
 };
@@ -515,6 +569,53 @@ table.data th {
   .form-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* MOBILE SHELL */
+
+.m-header {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px;
+  background: #111827;
+  color: white;
+}
+
+.m-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.m-main {
+  padding: 16px 14px calc(84px + env(safe-area-inset-bottom, 0px));
+  display: grid;
+  gap: 16px;
+}
+
+/* Grid children may shrink below their content width (no sideways overflow) */
+.m-main > *,
+.m-main .view > * {
+  min-width: 0;
+}
+
+.app.mobile .card {
+  padding: 18px;
+  border-radius: 14px;
+}
+
+.app.mobile button {
+  min-height: 44px;
+}
+
+.app.mobile input,
+.app.mobile select {
+  min-height: 44px;
+  font-size: 16px; /* avoids zoom on focus */
 }
 
 /* RESPONSIVE */

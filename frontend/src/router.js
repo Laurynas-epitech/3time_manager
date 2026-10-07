@@ -5,28 +5,46 @@ import { setUnauthorizedHandler } from "./api";
 
 import LoginView from "./views/LoginView.vue";
 import RegisterView from "./views/RegisterView.vue";
-import DashboardView from "./views/DashboardView.vue";
+import HomeView from "./views/HomeView.vue";
+import HistoryView from "./views/mobile/HistoryView.vue";
 import ProfileView from "./views/ProfileView.vue";
 import TeamsView from "./views/TeamsView.vue";
 import AdminView from "./views/AdminView.vue";
 
 const routes = [
-  { path: "/login", name: "login", component: LoginView, meta: { guestOnly: true } },
-  { path: "/register", name: "register", component: RegisterView, meta: { guestOnly: true } },
+  { path: "/login", name: "login", component: LoginView, meta: { guestOnly: true, title: "Log in" } },
+  {
+    path: "/register",
+    name: "register",
+    component: RegisterView,
+    meta: { guestOnly: true, title: "Create account" },
+  },
 
-  { path: "/", name: "dashboard", component: DashboardView, meta: { requiresAuth: true } },
-  { path: "/profile", name: "profile", component: ProfileView, meta: { requiresAuth: true } },
+  // Desktop: dashboard. Mobile: the clock screen (dashboards are desktop-only).
+  { path: "/", name: "dashboard", component: HomeView, meta: { requiresAuth: true, title: "Clock" } },
+  {
+    path: "/history",
+    name: "history",
+    component: HistoryView,
+    meta: { requiresAuth: true, title: "History" },
+  },
+  {
+    path: "/profile",
+    name: "profile",
+    component: ProfileView,
+    meta: { requiresAuth: true, title: "Profile" },
+  },
   {
     path: "/teams",
     name: "teams",
     component: TeamsView,
-    meta: { requiresAuth: true, roles: ["manager", "admin"] },
+    meta: { requiresAuth: true, roles: ["manager", "admin"], title: "Team" },
   },
   {
     path: "/admin",
     name: "admin",
     component: AdminView,
-    meta: { requiresAuth: true, roles: ["admin"] },
+    meta: { requiresAuth: true, roles: ["admin"], title: "Admin" },
   },
 
   { path: "/:pathMatch(.*)*", redirect: "/" },

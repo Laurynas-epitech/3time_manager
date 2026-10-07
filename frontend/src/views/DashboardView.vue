@@ -134,7 +134,7 @@
 </template>
 
 <script>
-import api from "../api";
+import { cachedGet } from "../offline";
 import auth from "../auth";
 
 import WorkingTimes from "../components/WorkingTimes.vue";
@@ -197,7 +197,7 @@ export default {
   methods: {
     async loadUsers() {
       try {
-        const { data } = await api.get("/users");
+        const { data } = await cachedGet("/users");
         this.users = data.data ?? [];
       } catch (error) {
         console.error("LOAD USERS ERROR:", error);

@@ -1,0 +1,22 @@
+{
+  "appId": "eu.epitech.timemanager",
+  "appName": "Time Manager",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "backgroundColor": "#111827"
+    },
+    "LocalNotifications": {
+      "iconColor": "#4f46e5"
+    }
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#111827"
+  }
+}

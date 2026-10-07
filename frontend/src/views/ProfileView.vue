@@ -79,6 +79,14 @@
 
           <button
             type="button"
+            class="secondary"
+            @click="logout"
+          >
+            Log out
+          </button>
+
+          <button
+            type="button"
             class="danger"
             @click="remove"
           >
@@ -132,6 +140,12 @@ export default {
         this.error = errorMessage(error, "Could not update the profile.");
       } finally {
         this.saving = false;
+      }
+    },
+
+    async logout() {
+      if (await auth.logoutWithConfirm()) {
+        this.$router.push({ name: "login" });
       }
     },
 
