@@ -20,7 +20,6 @@ defmodule TimeManagerWeb.Router do
 
     post "/register", AuthController, :register
     post "/login", AuthController, :login
-    post "/logout", AuthController, :logout
   end
 
   # ADMIN ONLY
@@ -40,6 +39,7 @@ defmodule TimeManagerWeb.Router do
     pipe_through [:api, :auth]
 
     get "/auth/me", AuthController, :me
+    post "/auth/logout", AuthController, :logout
 
     # ROLES (read-only, predefined)
     get "/roles", RoleController, :index
@@ -90,7 +90,7 @@ defmodule TimeManagerWeb.Router do
         metrics: TimeManagerWeb.Telemetry
 
       forward "/mailbox",
-        Plug.Swoosh.MailboxPreview
+              Plug.Swoosh.MailboxPreview
     end
   end
 end

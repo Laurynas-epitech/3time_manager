@@ -1,0 +1,2 @@
+# Keep operational shell scripts executable on Linux.
+*.sh text eol=lf

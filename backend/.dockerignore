@@ -3,3 +3,9 @@ deps
 .git
 .gitignore
 erl_crash.dump
+
+# Deployment secrets
+.env
+.env.*
+!.env.example
+.secrets/

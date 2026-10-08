@@ -21,5 +21,5 @@ RUN mix deps.get && mix compile
 
 EXPOSE 4000
 
-# Migrate, seed the admin (idempotent), then start the server.
-CMD ["sh", "-c", "mix ecto.migrate && mix run priv/repo/seeds.exs && mix phx.server"]
+# Run reviewed migrations and admin bootstrap separately from the limited app account.
+CMD ["mix", "phx.server"]

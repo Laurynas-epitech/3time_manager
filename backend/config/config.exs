@@ -28,8 +28,7 @@ config :time_manager, TimeManagerWeb.Endpoint,
   pubsub_server: TimeManager.PubSub,
   live_view: [signing_salt: "7qXwrw6P"]
 
-config :time_manager, TimeManager.Mailer,
-  adapter: Swoosh.Adapters.Local
+config :time_manager, TimeManager.Mailer, adapter: Swoosh.Adapters.Local
 
 config :esbuild,
   version: "0.25.4",

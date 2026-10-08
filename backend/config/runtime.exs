@@ -23,15 +23,22 @@ end
 config :time_manager, TimeManagerWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
-# Secret used by Joken to sign the JWTs. Set JWT_SECRET in production.
+# Deployed instances require a private signing secret; files avoid secrets in env dumps.
 jwt_secret =
-  System.get_env("JWT_SECRET") ||
-    if config_env() == :prod do
-      raise "environment variable JWT_SECRET is missing"
+  case System.get_env("JWT_SECRET_FILE") do
+    nil -> System.get_env("JWT_SECRET")
+    path -> path |> File.read!() |> String.trim()
+  end
+
+jwt_secret =
+  jwt_secret ||
+    if config_env() == :prod or System.get_env("DB_PASSWORD_FILE") do
+      raise "JWT_SECRET or JWT_SECRET_FILE is required for deployment"
     else
-      "dev-only-jwt-secret-change-me-0123456789"
+      :crypto.strong_rand_bytes(32) |> Base.encode64()
     end
 
+if byte_size(jwt_secret) < 32, do: raise("JWT signing secret must contain at least 32 bytes")
 config :joken, default_signer: jwt_secret
 
 config :time_manager, :secure_cookies, System.get_env("SECURE_COOKIES") in ~w(true 1)
@@ -130,4 +137,17 @@ if config_env() == :prod do
   #     config :swoosh, :api_client, Swoosh.ApiClient.Req
   #
   # See https://swoosh.hexdocs.pm/Swoosh.html#module-installation for details.
+end
+
+# Deployment credentials override development defaults without embedding secrets.
+if config_env() == :dev and System.get_env("DB_PASSWORD_FILE") do
+  config :time_manager, TimeManager.Repo,
+    username: System.fetch_env!("DB_USERNAME"),
+    password: System.fetch_env!("DB_PASSWORD_FILE") |> File.read!() |> String.trim(),
+    hostname: System.fetch_env!("DB_HOST"),
+    database: System.fetch_env!("DB_NAME"),
+    show_sensitive_data_on_connection_error: false,
+    log: false
+
+  config :logger, level: :info
 end

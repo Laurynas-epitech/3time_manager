@@ -22,8 +22,7 @@ config :time_manager, TimeManagerWeb.Endpoint,
 # Enable dev routes
 config :time_manager, dev_routes: true
 
-config :logger, :default_formatter,
-  format: "[$level] $message\n"
+config :logger, :default_formatter, format: "[$level] $message\n"
 
 config :phoenix, :stacktrace_depth, 20
 config :phoenix, :plug_init_mode, :runtime

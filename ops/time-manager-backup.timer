@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily Time Manager backup at 03:00 Paris time
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 Europe/Paris
+Persistent=true
+Unit=time-manager-backup.service
+
+[Install]
+WantedBy=timers.target

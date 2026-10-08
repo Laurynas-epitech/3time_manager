@@ -15,7 +15,7 @@ defmodule TimeManagerWeb.ClockController do
       clocks =
         from(c in Clock,
           where: c.user_id == ^user_id,
-          order_by: [asc: c.time]
+          order_by: [asc: c.time, asc: c.id]
         )
         |> Repo.all()
 
@@ -25,8 +25,7 @@ defmodule TimeManagerWeb.ClockController do
 
   def create(conn, %{"userID" => user_id, "clock" => clock_params}) do
     with :ok <- authorize(Authorization.can_clock?(conn.assigns.current_user, user_id)),
-         clock_params = Map.put(clock_params, "user_id", user_id),
-         {:ok, %Clock{} = clock} <- TimeTracking.create_clock(clock_params) do
+         {:ok, %Clock{} = clock} <- TimeTracking.record_clock(user_id, clock_params) do
       conn
       |> put_status(:created)
       |> render(:show, clock: clock)
