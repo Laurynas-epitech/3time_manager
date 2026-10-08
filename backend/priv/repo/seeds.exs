@@ -1,21 +1,28 @@
-# Creates the default admin. Safe to run several times.
-#
-#     mix run priv/repo/seeds.exs
-#
-# Credentials can be changed with ADMIN_EMAIL / ADMIN_PASSWORD.
-
+# Explicit admin bootstrap, run separately with administrator DB credentials.
 alias TimeManager.Accounts
 
-email = System.get_env("ADMIN_EMAIL", "admin@timemanager.local")
-password = System.get_env("ADMIN_PASSWORD", "admin1234")
+email = System.fetch_env!("ADMIN_EMAIL")
 
 case Accounts.get_user_by_email(email) do
   nil ->
+    password =
+      case System.get_env("ADMIN_PASSWORD_FILE") do
+        nil -> System.fetch_env!("ADMIN_PASSWORD")
+        path -> path |> File.read!() |> String.trim()
+      end
+
     {:ok, _} =
-      Accounts.create_user(%{"username" => "admin", "email" => email, "password" => password}, "admin")
+      Accounts.create_user(
+        %{"username" => "admin", "email" => email, "password" => password},
+        "admin"
+      )
 
-    IO.puts("Admin created: #{email} / #{password}")
+    IO.puts("Administrator created; credentials were not logged.")
 
-  _user ->
-    IO.puts("Admin already exists: #{email}")
+  user ->
+    if Accounts.role_name(user) != "admin" do
+      raise "ADMIN_EMAIL already belongs to a non-administrator; resolve explicitly"
+    end
+
+    IO.puts("Administrator already exists.")
 end

@@ -64,6 +64,7 @@
           <ClockManager
             :user-id="selectedUserId"
             :can-clock="canClock"
+            @clock-changed="handleWorkingTimeSaved"
           />
         </section>
 

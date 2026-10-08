@@ -8,8 +8,6 @@ services:
       POSTGRES_DB: time_manager_dev
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 3s
@@ -27,7 +25,7 @@ services:
       - "4000:4000"
     environment:
       MIX_ENV: dev
-      JWT_SECRET: change-me-in-production-please-0123456789
+      JWT_SECRET: ${JWT_SECRET:?Set a private JWT_SECRET before starting the backend}
 
   frontend:
     build:

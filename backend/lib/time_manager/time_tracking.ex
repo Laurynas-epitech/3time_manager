@@ -104,6 +104,66 @@ defmodule TimeManager.TimeTracking do
 
   alias TimeManager.TimeTracking.Clock
 
+  @doc "Records an attendance transition and saves a completed session atomically."
+  def record_clock(user_id, attrs) do
+    Repo.transaction(fn ->
+      # Serialize transitions even when there is no previous clock to lock.
+      user =
+        Repo.one!(
+          from(u in TimeManager.Accounts.User, where: u.id == ^user_id, lock: "FOR UPDATE")
+        )
+
+      latest =
+        Repo.one(
+          from(c in Clock,
+            where: c.user_id == ^user.id,
+            order_by: [desc: c.time, desc: c.id],
+            limit: 1
+          )
+        )
+
+      changeset = Clock.changeset(%Clock{user_id: user.id}, Map.drop(attrs, ["user_id"]))
+      status = Ecto.Changeset.get_field(changeset, :status)
+      time = Ecto.Changeset.get_field(changeset, :time)
+
+      changeset =
+        if status == (latest && latest.status) or (is_nil(latest) and status == false) do
+          Ecto.Changeset.add_error(
+            changeset,
+            :status,
+            "does not change the current attendance status"
+          )
+        else
+          changeset
+        end
+
+      changeset =
+        if latest && time && DateTime.compare(time, latest.time) == :lt do
+          Ecto.Changeset.add_error(changeset, :time, "cannot precede the previous clock")
+        else
+          changeset
+        end
+
+      clock =
+        case Repo.insert(changeset) do
+          {:ok, clock} -> clock
+          {:error, changeset} -> Repo.rollback(changeset)
+        end
+
+      if not clock.status do
+        %WorkingTime{user_id: user.id}
+        |> WorkingTime.changeset(%{start: latest.time, end: clock.time})
+        |> Repo.insert()
+        |> case do
+          {:ok, _working_time} -> :ok
+          {:error, changeset} -> Repo.rollback(changeset)
+        end
+      end
+
+      clock
+    end)
+  end
+
   @doc """
   Returns the list of clocks.
 

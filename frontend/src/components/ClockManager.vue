@@ -35,6 +35,7 @@
     <button
       v-if="canClock"
       class="clock-button"
+      :disabled="loading || saving"
       @click="clock"
     >
       {{
@@ -43,6 +44,7 @@
           : "Clock In"
       }}
     </button>
+    <p v-if="error" role="alert">{{ error }}</p>
   </div>
 </template>
 
@@ -51,6 +53,7 @@ import api from "../api";
 
 export default {
   name: "ClockManager",
+  emits: ["clock-changed"],
 
   props: {
     userId: {
@@ -68,6 +71,9 @@ export default {
     return {
       startDateTime: null,
       clockIn: false,
+      loading: false,
+      saving: false,
+      error: "",
     };
   },
 
@@ -84,6 +90,8 @@ export default {
   methods: {
     async refresh() {
       if (!this.userId) return;
+      this.loading = true;
+      this.error = "";
 
       try {
         const response = await api.get(
@@ -117,13 +125,16 @@ export default {
           error
         );
 
-        this.clockIn = false;
-        this.startDateTime = null;
+        this.error = "Unable to load attendance status. Please try again.";
+      } finally {
+        this.loading = false;
       }
     },
 
     async clock() {
-      if (!this.userId) return;
+      if (!this.userId || this.loading || this.saving) return;
+      this.saving = true;
+      this.error = "";
 
       try {
         await api.post(
@@ -136,11 +147,15 @@ export default {
   }
 );
         await this.refresh();
+        this.$emit("clock-changed");
       } catch (error) {
         console.error(
           "CLOCK ERROR:",
           error
         );
+        this.error = "Unable to save attendance. Please refresh and try again.";
+      } finally {
+        this.saving = false;
       }
     },
 

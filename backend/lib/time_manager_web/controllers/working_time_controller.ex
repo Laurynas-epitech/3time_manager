@@ -48,9 +48,7 @@ defmodule TimeManagerWeb.WorkingTimeController do
       Map.put(working_time_params, "user_id", user_id)
 
     with :ok <-
-           authorize(
-             Authorization.can_manage_working_times?(conn.assigns.current_user, user_id)
-           ),
+           authorize(Authorization.can_manage_working_times?(conn.assigns.current_user, user_id)),
          {:ok, %WorkingTime{} = working_time} <-
            TimeTracking.create_working_time(working_time_params) do
       conn

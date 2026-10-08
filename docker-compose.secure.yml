@@ -1,0 +1,65 @@
+# OVH deployment: clean cluster; the incident volume is never mounted here.
+services:
+  db_secure:
+    image: postgres:16-alpine
+    container_name: time_manager_db_secure
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_admin_password
+      POSTGRES_DB: time_manager_dev
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=trust"
+    secrets:
+      - db_admin_password
+    volumes:
+      - postgres_secure:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d time_manager_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: time_manager_backend
+    depends_on:
+      db_secure:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    environment:
+      MIX_ENV: dev
+      DB_USERNAME: time_manager_app
+      DB_PASSWORD_FILE: /run/secrets/db_app_password
+      DB_HOST: db_secure
+      DB_NAME: time_manager_dev
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+    secrets:
+      - db_app_password
+      - jwt_secret
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: time_manager_frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
+
+secrets:
+  jwt_secret:
+    file: ./.secrets/jwt_secret
+  db_admin_password:
+    file: ./.secrets/db_admin_password
+  db_app_password:
+    file: ./.secrets/db_app_password
+
+volumes:
+  postgres_secure:
+    external: true
+    name: time_manager_postgres_secure_20261008

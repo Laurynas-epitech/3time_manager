@@ -14,7 +14,7 @@
       <strong>No working times yet.</strong>
 
       <span>
-        {{ canEdit ? "Add a working-time entry above to get started." : "Your manager will add them here." }}
+        Clock in and clock out to record your first session.
       </span>
     </div>
 

@@ -46,18 +46,18 @@ defmodule TimeManager.Teams do
 
   def delete_team(%Team{} = team), do: Repo.delete(team)
 
+  # Atomic: the unique (team_id, user_id) index turns a repeated add into a
+  # no-op, whatever state the `team` struct passed in is in (stale struct,
+  # double click, two requests at once).
   def add_member(%Team{} = team, %User{} = user) do
-    team = Repo.preload(team, :members)
+    Repo.insert_all(
+      "team_users",
+      [%{team_id: team.id, user_id: user.id}],
+      on_conflict: :nothing,
+      conflict_target: [:team_id, :user_id]
+    )
 
-    if Enum.any?(team.members, &(&1.id == user.id)) do
-      {:ok, get_team!(team.id)}
-    else
-      team
-      |> Ecto.Changeset.change()
-      |> Ecto.Changeset.put_assoc(:members, [user | team.members])
-      |> Repo.update()
-      |> preload()
-    end
+    {:ok, get_team!(team.id)}
   end
 
   def remove_member(%Team{} = team, user_id) do

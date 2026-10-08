@@ -21,8 +21,13 @@ defmodule TimeManagerWeb.PermissionsTest do
   describe "users" do
     test "each role sees a different list", ctx do
       ids = fn user ->
-        build_conn() |> log_in(user) |> get(~p"/api/users") |> json_response(200)
-        |> Map.fetch!("data") |> Enum.map(& &1["id"]) |> Enum.sort()
+        build_conn()
+        |> log_in(user)
+        |> get(~p"/api/users")
+        |> json_response(200)
+        |> Map.fetch!("data")
+        |> Enum.map(& &1["id"])
+        |> Enum.sort()
       end
 
       assert length(ids.(ctx.admin)) == 4
@@ -30,8 +35,12 @@ defmodule TimeManagerWeb.PermissionsTest do
       assert ids.(ctx.employee) == [ctx.employee.id]
 
       directory = fn user ->
-        build_conn() |> log_in(user) |> get(~p"/api/users?scope=all") |> json_response(200)
-        |> Map.fetch!("data") |> length()
+        build_conn()
+        |> log_in(user)
+        |> get(~p"/api/users?scope=all")
+        |> json_response(200)
+        |> Map.fetch!("data")
+        |> length()
       end
 
       assert directory.(ctx.manager) == 4
@@ -39,9 +48,14 @@ defmodule TimeManagerWeb.PermissionsTest do
     end
 
     test "only admins create users and change roles", ctx do
-      params = %{user: %{username: "x", email: unique_email(), password: "secret123", role: "manager"}}
+      params = %{
+        user: %{username: "x", email: unique_email(), password: "secret123", role: "manager"}
+      }
 
-      assert build_conn() |> log_in(ctx.employee) |> post(~p"/api/users", params) |> json_response(403)
+      assert build_conn()
+             |> log_in(ctx.employee)
+             |> post(~p"/api/users", params)
+             |> json_response(403)
 
       conn = build_conn() |> log_in(ctx.admin) |> post(~p"/api/users", params)
       assert %{"role" => "manager"} = json_response(conn, 201)["data"]
@@ -62,8 +76,14 @@ defmodule TimeManagerWeb.PermissionsTest do
     test "employees can only edit themselves", ctx do
       conn = build_conn() |> log_in(ctx.employee)
 
-      assert conn |> put(~p"/api/users/#{ctx.employee.id}", user: %{username: "me"}) |> json_response(200)
-      assert conn |> put(~p"/api/users/#{ctx.outsider.id}", user: %{username: "hack"}) |> json_response(403)
+      assert conn
+             |> put(~p"/api/users/#{ctx.employee.id}", user: %{username: "me"})
+             |> json_response(200)
+
+      assert conn
+             |> put(~p"/api/users/#{ctx.outsider.id}", user: %{username: "hack"})
+             |> json_response(403)
+
       assert conn |> get(~p"/api/users/#{ctx.outsider.id}") |> json_response(403)
     end
   end
@@ -73,7 +93,12 @@ defmodule TimeManagerWeb.PermissionsTest do
       wt = working_time_fixture(%{user_id: ctx.employee.id})
       conn = build_conn() |> log_in(ctx.manager)
 
-      assert [%{"id" => id}] = conn |> get(~p"/api/workingtime/#{ctx.employee.id}") |> json_response(200) |> Map.fetch!("data")
+      assert [%{"id" => id}] =
+               conn
+               |> get(~p"/api/workingtime/#{ctx.employee.id}")
+               |> json_response(200)
+               |> Map.fetch!("data")
+
       assert id == wt.id
       assert conn |> get(~p"/api/workingtime/#{ctx.outsider.id}") |> json_response(403)
 
@@ -96,13 +121,21 @@ defmodule TimeManagerWeb.PermissionsTest do
 
       assert conn |> post(~p"/api/clock/#{ctx.employee.id}", body) |> json_response(201)
       assert conn |> post(~p"/api/clock/#{ctx.outsider.id}", body) |> json_response(403)
-      assert [_] = conn |> get(~p"/api/clock/#{ctx.employee.id}") |> json_response(200) |> Map.fetch!("data")
+
+      assert [_] =
+               conn
+               |> get(~p"/api/clock/#{ctx.employee.id}")
+               |> json_response(200)
+               |> Map.fetch!("data")
     end
   end
 
   describe "teams" do
     test "admin creates teams, manager manages members of own team", ctx do
-      assert build_conn() |> log_in(ctx.manager) |> post(~p"/api/teams", team: %{name: "B"}) |> json_response(403)
+      assert build_conn()
+             |> log_in(ctx.manager)
+             |> post(~p"/api/teams", team: %{name: "B"})
+             |> json_response(403)
 
       conn = build_conn() |> log_in(ctx.admin) |> post(~p"/api/teams", team: %{name: "B"})
       assert %{"id" => other_team_id} = json_response(conn, 201)["data"]
@@ -110,10 +143,16 @@ defmodule TimeManagerWeb.PermissionsTest do
       manager = build_conn() |> log_in(ctx.manager)
 
       assert %{"members" => members} =
-               manager |> post(~p"/api/teams/#{ctx.team.id}/members/#{ctx.outsider.id}") |> json_response(200) |> Map.fetch!("data")
+               manager
+               |> post(~p"/api/teams/#{ctx.team.id}/members/#{ctx.outsider.id}")
+               |> json_response(200)
+               |> Map.fetch!("data")
 
       assert length(members) == 2
-      assert manager |> post(~p"/api/teams/#{other_team_id}/members/#{ctx.outsider.id}") |> json_response(403)
+
+      assert manager
+             |> post(~p"/api/teams/#{other_team_id}/members/#{ctx.outsider.id}")
+             |> json_response(403)
     end
 
     test "a team manager must have the manager or admin role", ctx do
@@ -124,5 +163,14 @@ defmodule TimeManagerWeb.PermissionsTest do
 
       assert json_response(conn, 422)
     end
+  end
+
+  test "a demoted manager loses membership management even with an existing JWT", ctx do
+    conn = build_conn() |> log_in(ctx.manager)
+    {:ok, _} = TimeManager.Accounts.update_user_role(ctx.manager, "employee")
+
+    assert conn
+           |> post(~p"/api/teams/#{ctx.team.id}/members/#{ctx.outsider.id}")
+           |> json_response(403)
   end
 end

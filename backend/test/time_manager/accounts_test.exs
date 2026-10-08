@@ -12,7 +12,11 @@ defmodule TimeManager.AccountsTest do
 
   test "create_user/1 hashes the password and defaults to employee" do
     assert {:ok, %User{} = user} =
-             Accounts.create_user(%{"username" => "joao", "email" => unique_email(), "password" => "secret123"})
+             Accounts.create_user(%{
+               "username" => "joao",
+               "email" => unique_email(),
+               "password" => "secret123"
+             })
 
     assert user.password_hash
     refute user.password_hash == "secret123"
@@ -22,14 +26,22 @@ defmodule TimeManager.AccountsTest do
 
   test "create_user/1 rejects short passwords and duplicated emails" do
     assert {:error, changeset} =
-             Accounts.create_user(%{"username" => "a", "email" => unique_email(), "password" => "123"})
+             Accounts.create_user(%{
+               "username" => "a",
+               "email" => unique_email(),
+               "password" => "123"
+             })
 
     assert %{password: [_]} = errors_on(changeset)
 
     user = user_fixture()
 
     assert {:error, changeset} =
-             Accounts.create_user(%{"username" => "b", "email" => user.email, "password" => "secret123"})
+             Accounts.create_user(%{
+               "username" => "b",
+               "email" => user.email,
+               "password" => "secret123"
+             })
 
     assert %{email: ["has already been taken"]} = errors_on(changeset)
   end

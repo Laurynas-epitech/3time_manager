@@ -50,7 +50,7 @@ defmodule TimeManagerWeb.Authorization do
   end
 
   def can_manage_team?(%User{} = current, team) do
-    admin?(current) or Teams.manages_team?(current.id, team)
+    admin?(current) or (manager?(current) and Teams.manages_team?(current.id, team))
   end
 
   def to_int(value) when is_integer(value), do: value

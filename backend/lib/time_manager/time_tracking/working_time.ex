@@ -3,17 +3,17 @@ defmodule TimeManager.TimeTracking.WorkingTime do
   import Ecto.Changeset
 
   schema "workingtime" do
-  field :start, :utc_datetime
-  field :end, :utc_datetime
+    field :start, :utc_datetime
+    field :end, :utc_datetime
 
-  belongs_to :user, TimeManager.Accounts.User
+    belongs_to :user, TimeManager.Accounts.User
 
-  timestamps(type: :utc_datetime)
-end
+    timestamps(type: :utc_datetime)
+  end
 
-def changeset(working_time, attrs) do
-  working_time
-  |> cast(attrs, [:start, :end, :user_id])
-  |> validate_required([:start, :end, :user_id])
-end
+  def changeset(working_time, attrs) do
+    working_time
+    |> cast(attrs, [:start, :end, :user_id])
+    |> validate_required([:start, :end, :user_id])
+  end
 end

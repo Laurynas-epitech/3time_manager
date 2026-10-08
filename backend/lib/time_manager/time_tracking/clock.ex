@@ -8,7 +8,6 @@ defmodule TimeManager.TimeTracking.Clock do
 
     belongs_to :user, TimeManager.Accounts.User
 
-
     timestamps(type: :utc_datetime)
   end
 

@@ -6,6 +6,7 @@ defmodule TimeManager.Teams.Team do
     field :name, :string
 
     belongs_to :manager, TimeManager.Accounts.User
+
     many_to_many :members, TimeManager.Accounts.User,
       join_through: "team_users",
       on_replace: :delete

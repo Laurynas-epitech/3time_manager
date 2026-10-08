@@ -87,8 +87,13 @@ defmodule TimeManagerWeb.TeamController do
   # The manager of a team must have the manager (or admin) role.
   defp validate_manager(%{"manager_id" => manager_id}) when manager_id not in [nil, ""] do
     case Accounts.get_user(Authorization.to_int(manager_id)) do
-      nil -> {:error, :not_found}
-      user -> if Accounts.role_name(user) in ["manager", "admin"], do: :ok, else: {:error, :invalid_role}
+      nil ->
+        {:error, :not_found}
+
+      user ->
+        if Accounts.role_name(user) in ["manager", "admin"],
+          do: :ok,
+          else: {:error, :invalid_role}
     end
   end
 
