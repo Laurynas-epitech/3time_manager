@@ -6,6 +6,16 @@
     />
 
     <main class="page">
+      <section v-if="!demoMode && (user || sync.error)" class="sync-status" role="status" aria-live="polite">
+        <p v-if="sync.syncing">Synchronising attendance: {{ sync.completed }} / {{ sync.total }}.</p>
+        <p v-else-if="!user">Sign in to synchronise your saved attendance.</p>
+        <p v-else-if="!sync.online">Offline — {{ sync.pending }} attendance action(s) saved on this device.</p>
+        <p v-else-if="sync.pending">{{ sync.pending }} attendance action(s) waiting to synchronise.</p>
+        <p v-else>All attendance changes saved.</p>
+        <p v-if="user && sync.offlineReady">App downloaded for offline use.</p>
+        <p v-if="sync.error" role="alert">{{ sync.error }}</p>
+        <button v-if="user && !sync.syncing" class="secondary" @click="retrySync">Synchronise now</button>
+      </section>
       <router-view />
     </main>
 
@@ -15,6 +25,7 @@
 
 <script>
 import auth from "./auth";
+import { attendanceState, synchronizeAttendance } from "./services/attendance";
 import AppHeader from "./components/AppHeader.vue";
 import AppToast from "./components/AppToast.vue";
 
@@ -22,12 +33,15 @@ export default {
   components: { AppHeader, AppToast },
 
   computed: {
+    sync() { return attendanceState; },
+    demoMode() { return auth.isDemo(); },
     user() {
       return auth.state.user;
     },
   },
 
   methods: {
+    retrySync() { void synchronizeAttendance(); },
     async logout() {
       await auth.logout();
       this.$router.push({ name: "login" });
@@ -37,6 +51,8 @@ export default {
 </script>
 
 <style>
+.sync-status { padding: 12px 16px; margin-bottom: 16px; border: var(--tm-border); border-radius: var(--tm-radius-card); background: var(--tm-surface); }
+.sync-status p { margin: 4px 0; }
 /* Global "Punch Card" base styles (tokens live in styles/tokens.css).
    The generic classes below (.card, .field, .error-msg, ...) keep the screens
    that are not rebuilt yet consistent with the new look. */

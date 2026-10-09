@@ -154,7 +154,10 @@
 </template>
 
 <script>
-import api, { errorMessage } from "../api";
+import { errorMessage } from "../api";
+import auth from "../auth";
+import { getAttendance, attendanceState } from "../services/attendance";
+import { getDemoAttendance } from "../services/demoAttendance";
 import RangeChips from "./RangeChips.vue";
 import StatTile from "./StatTile.vue";
 import {
@@ -165,7 +168,6 @@ import {
   hoursByDay,
   startOfDay,
   startOfWeek,
-  toApiDateTime,
   toDateKey,
 } from "../time";
 
@@ -209,6 +211,7 @@ export default {
   },
 
   computed: {
+    attendanceRevision() { return attendanceState.revision; },
     periodStart() {
       return fromDateKey(this.from);
     },
@@ -292,6 +295,7 @@ export default {
   },
 
   watch: {
+    attendanceRevision() { if (!auth.isDemo()) this.load(false); },
     userId() {
       this.load();
     },
@@ -322,7 +326,7 @@ export default {
       this.load();
     },
 
-    async load() {
+    async load(refresh = true) {
       this.error = "";
 
       if (!this.userId || !this.from || !this.to) return;
@@ -340,16 +344,10 @@ export default {
       this.loading = true;
 
       try {
-        // The API returns sessions fully inside the range, so ask for one extra
-        // day on each side and clip sessions that cross the period boundaries.
-        const { data } = await api.get(`/workingtime/${this.userId}`, {
-          params: {
-            start: toApiDateTime(addDays(this.periodStart, -1)),
-            end: toApiDateTime(addDays(this.periodEnd, 1)),
-          },
-        });
-
-        this.workingTimes = data.data ?? [];
+        const attendance = auth.isDemo()
+          ? await getDemoAttendance(this.userId)
+          : await getAttendance(this.userId, { refresh: refresh !== false });
+        this.workingTimes = attendance.workingTimes;
       } catch (error) {
         this.workingTimes = [];
         this.error = errorMessage(error, "Could not load the working hours.");

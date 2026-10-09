@@ -60,6 +60,48 @@ defmodule TimeManagerWeb.ClockControllerTest do
     assert TimeManager.TimeTracking.list_workingtime() == []
   end
 
+  test "queued retries remain idempotent after later transitions", %{conn: conn, user: user} do
+    path = ~p"/api/clock/#{user.id}"
+    start = %{time: "2026-10-09T08:00:00Z", status: true, client_action_id: Ecto.UUID.generate()}
+
+    finish = %{
+      time: "2026-10-09T09:00:00Z",
+      status: false,
+      client_action_id: Ecto.UUID.generate()
+    }
+
+    first = conn |> post(path, clock: start) |> json_response(201)
+    last = conn |> post(path, clock: finish) |> json_response(201)
+    assert conn |> post(path, clock: start) |> json_response(201) == first
+    assert conn |> post(path, clock: finish) |> json_response(201) == last
+    assert length(TimeManager.TimeTracking.list_clocks()) == 2
+    assert length(TimeManager.TimeTracking.list_workingtime()) == 1
+  end
+
+  test "action IDs cannot change payloads or bypass another user's permissions", %{
+    conn: conn,
+    user: user
+  } do
+    path = ~p"/api/clock/#{user.id}"
+    attrs = %{time: "2026-10-09T08:00:00Z", status: true, client_action_id: Ecto.UUID.generate()}
+    assert conn |> post(path, clock: attrs) |> json_response(201)
+
+    assert conn
+           |> post(path, clock: %{attrs | time: "2026-10-09T09:00:00Z", status: false})
+           |> json_response(422)
+
+    other = user_fixture()
+
+    assert conn
+           |> post(path, clock: Map.put(attrs, :client_owner_id, other.id))
+           |> json_response(403)
+
+    assert build_conn() |> log_in(other) |> post(path, clock: attrs) |> json_response(403)
+    assert conn |> post(path, clock: %{attrs | client_action_id: "invalid"}) |> json_response(422)
+    assert length(TimeManager.TimeTracking.list_clocks()) == 1
+    assert TimeManager.TimeTracking.list_workingtime() == []
+  end
+
   test "same-second transitions retain the latest status and subsequent sessions", %{
     conn: conn,
     user: user

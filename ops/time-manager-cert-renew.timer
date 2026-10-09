@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Time Manager certificate renewal every four hours
+
+[Timer]
+OnCalendar=*-*-* 00,04,08,12,16,20:00:00
+RandomizedDelaySec=15m
+Persistent=true
+Unit=time-manager-cert-renew.service
+
+[Install]
+WantedBy=timers.target

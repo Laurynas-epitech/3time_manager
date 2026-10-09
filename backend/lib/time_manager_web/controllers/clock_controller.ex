@@ -25,6 +25,7 @@ defmodule TimeManagerWeb.ClockController do
 
   def create(conn, %{"userID" => user_id, "clock" => clock_params}) do
     with :ok <- authorize(Authorization.can_clock?(conn.assigns.current_user, user_id)),
+         :ok <- authorize(matches_owner?(conn.assigns.current_user, clock_params)),
          {:ok, %Clock{} = clock} <- TimeTracking.record_clock(user_id, clock_params) do
       conn
       |> put_status(:created)
@@ -34,4 +35,11 @@ defmodule TimeManagerWeb.ClockController do
 
   defp authorize(true), do: :ok
   defp authorize(_), do: {:error, :forbidden}
+
+  defp matches_owner?(user, params) do
+    case Map.fetch(params, "client_owner_id") do
+      :error -> true
+      {:ok, owner_id} -> owner_id == user.id or owner_id == Integer.to_string(user.id)
+    end
+  end
 end

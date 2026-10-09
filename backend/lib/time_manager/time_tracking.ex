@@ -113,55 +113,83 @@ defmodule TimeManager.TimeTracking do
           from(u in TimeManager.Accounts.User, where: u.id == ^user_id, lock: "FOR UPDATE")
         )
 
-      latest =
-        Repo.one(
-          from(c in Clock,
-            where: c.user_id == ^user.id,
-            order_by: [desc: c.time, desc: c.id],
-            limit: 1
-          )
-        )
-
       changeset = Clock.changeset(%Clock{user_id: user.id}, Map.drop(attrs, ["user_id"]))
-      status = Ecto.Changeset.get_field(changeset, :status)
-      time = Ecto.Changeset.get_field(changeset, :time)
 
-      changeset =
-        if status == (latest && latest.status) or (is_nil(latest) and status == false) do
-          Ecto.Changeset.add_error(
-            changeset,
-            :status,
-            "does not change the current attendance status"
+      if not changeset.valid?, do: Repo.rollback(changeset)
+
+      action_id = Ecto.Changeset.get_field(changeset, :client_action_id)
+
+      existing =
+        if action_id do
+          Repo.get_by(Clock, user_id: user.id, client_action_id: action_id)
+        end
+
+      if existing do
+        if existing.status == Ecto.Changeset.get_field(changeset, :status) and
+             DateTime.compare(existing.time, Ecto.Changeset.get_field(changeset, :time)) == :eq do
+          existing
+        else
+          changeset
+          |> Ecto.Changeset.add_error(
+            :client_action_id,
+            "was already used for a different action"
           )
-        else
-          changeset
+          |> Repo.rollback()
         end
+      else
+        record_clock_transition(user, changeset)
+      end
+    end)
+  end
 
-      changeset =
-        if latest && time && DateTime.compare(time, latest.time) == :lt do
-          Ecto.Changeset.add_error(changeset, :time, "cannot precede the previous clock")
-        else
-          changeset
-        end
+  defp record_clock_transition(user, changeset) do
+    latest =
+      Repo.one(
+        from(c in Clock,
+          where: c.user_id == ^user.id,
+          order_by: [desc: c.time, desc: c.id],
+          limit: 1
+        )
+      )
 
-      clock =
-        case Repo.insert(changeset) do
-          {:ok, clock} -> clock
-          {:error, changeset} -> Repo.rollback(changeset)
-        end
+    status = Ecto.Changeset.get_field(changeset, :status)
+    time = Ecto.Changeset.get_field(changeset, :time)
 
-      if not clock.status do
-        %WorkingTime{user_id: user.id}
-        |> WorkingTime.changeset(%{start: latest.time, end: clock.time})
-        |> Repo.insert()
-        |> case do
-          {:ok, _working_time} -> :ok
-          {:error, changeset} -> Repo.rollback(changeset)
-        end
+    changeset =
+      if status == (latest && latest.status) or (is_nil(latest) and status == false) do
+        Ecto.Changeset.add_error(
+          changeset,
+          :status,
+          "does not change the current attendance status"
+        )
+      else
+        changeset
       end
 
-      clock
-    end)
+    changeset =
+      if latest && time && DateTime.compare(time, latest.time) == :lt do
+        Ecto.Changeset.add_error(changeset, :time, "cannot precede the previous clock")
+      else
+        changeset
+      end
+
+    clock =
+      case Repo.insert(changeset) do
+        {:ok, clock} -> clock
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+
+    if not clock.status do
+      %WorkingTime{user_id: user.id}
+      |> WorkingTime.changeset(%{start: latest.time, end: clock.time})
+      |> Repo.insert()
+      |> case do
+        {:ok, _working_time} -> :ok
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end
+
+    clock
   end
 
   @doc """

@@ -70,6 +70,7 @@ router.beforeEach(async (to) => {
 
 // Session expired / cookie gone -> back to login.
 setUnauthorizedHandler(() => {
+  if (auth.isDemo()) return;
   auth.clearSession();
 
   if (router.currentRoute.value.meta.requiresAuth) {

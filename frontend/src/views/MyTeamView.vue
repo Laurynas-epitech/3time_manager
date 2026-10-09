@@ -143,13 +143,14 @@
 <script>
 import api, { errorMessage } from "../api";
 import auth from "../auth";
+import { getAttendance } from "../services/attendance";
 import HoursReport from "../components/HoursReport.vue";
 import PersonCard from "../components/PersonCard.vue";
 import RangeChips from "../components/RangeChips.vue";
 import WeekCard from "../components/WeekCard.vue";
 import WorkingTime from "../components/WorkingTime.vue";
 import WorkingTimes from "../components/WorkingTimes.vue";
-import { addDays, formatTimer, hoursByDay, startOfDay, toApiDateTime, toDateKey } from "../time";
+import { addDays, formatTimer, hoursByDay, startOfDay, toDateKey } from "../time";
 
 const EVERYONE = "everyone";
 const STATUS_REFRESH_MS = 60_000;
@@ -315,20 +316,10 @@ export default {
       const tomorrow = addDays(today, 1);
 
       try {
-        const [clocks, sessions] = await Promise.all([
-          api.get(`/clock/${id}`),
-          api.get(`/workingtime/${id}`, {
-            params: {
-              start: toApiDateTime(addDays(today, -1)),
-              end: toApiDateTime(addDays(tomorrow, 1)),
-            },
-          }),
-        ]);
-
-        const latest = (clocks.data.data ?? []).at(-1);
-        const clockIn = !!latest?.status;
-        const since = clockIn ? latest.time : null;
-        const completed = sessions.data.data ?? [];
+        const attendance = await getAttendance(id);
+        const clockIn = attendance.clockIn;
+        const since = attendance.startDateTime;
+        const completed = attendance.workingTimes;
         const all = clockIn ? [...completed, { start: since, end: new Date() }] : completed;
         const todayKey = toDateKey(today);
         const endsToday = completed.map((w) => new Date(w.end)).filter((d) => toDateKey(d) === todayKey);

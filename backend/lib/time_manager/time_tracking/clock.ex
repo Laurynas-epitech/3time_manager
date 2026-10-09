@@ -5,6 +5,7 @@ defmodule TimeManager.TimeTracking.Clock do
   schema "clocks" do
     field :time, :utc_datetime
     field :status, :boolean
+    field :client_action_id, Ecto.UUID
 
     belongs_to :user, TimeManager.Accounts.User
 
@@ -14,7 +15,8 @@ defmodule TimeManager.TimeTracking.Clock do
   @doc false
   def changeset(clock, attrs) do
     clock
-    |> cast(attrs, [:time, :status, :user_id])
+    |> cast(attrs, [:time, :status, :user_id, :client_action_id])
     |> validate_required([:time, :status, :user_id])
+    |> unique_constraint([:user_id, :client_action_id])
   end
 end

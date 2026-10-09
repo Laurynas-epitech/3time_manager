@@ -96,6 +96,10 @@ export default {
 
   methods: {
     async loadTeams() {
+      if (auth.isDemo() || !navigator.onLine || auth.state.offline) {
+        this.teamsLoaded = true;
+        return;
+      }
       try {
         const { data } = await api.get("/teams");
         this.teams = data.data ?? [];

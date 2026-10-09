@@ -6,6 +6,8 @@ const baseURL =
   import.meta.env.VITE_API_URL ||
   `${window.location.protocol}//${window.location.hostname}:4000/api`;
 
+export const apiScope = baseURL;
+
 const CSRF_KEY = "tm_csrf_token";
 
 export const csrfStorage = {
@@ -16,6 +18,7 @@ export const csrfStorage = {
 
 const api = axios.create({
   baseURL,
+  timeout: 10000,
   // Sends the HTTP-only JWT cookie with every request.
   withCredentials: true,
   headers: { "Content-Type": "application/json" },

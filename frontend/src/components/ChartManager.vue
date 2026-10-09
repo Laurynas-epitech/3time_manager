@@ -71,7 +71,9 @@
 </template>
 
 <script>
-import api from "../api";
+import { getAttendance, attendanceState } from "../services/attendance";
+import auth from "../auth";
+import { getDemoAttendance } from "../services/demoAttendance";
 
 import {
   Chart as ChartJS,
@@ -127,6 +129,7 @@ export default {
   },
 
   watch: {
+    attendanceRevision() { if (!auth.isDemo()) this.getWorkingTimes(false); },
     userId: {
       immediate: true,
 
@@ -137,6 +140,7 @@ export default {
   },
 
   computed: {
+    attendanceRevision() { return attendanceState.revision; },
     hours() {
       return this.workingTimes.map(
         (workingTime) => {
@@ -240,24 +244,18 @@ export default {
   },
 
   methods: {
-  async getWorkingTimes() {
+  async getWorkingTimes(refresh = true) {
     if (!this.userId) {
       this.workingTimes = [];
       return;
     }
 
     try {
-      const response = await api.get(
-        `/chartManager/${this.userId}`
-      );
-
-      const data =
-        response.data.data ?? response.data;
-
-      this.workingTimes =
-        Array.isArray(data)
-          ? data
-          : [];
+      if (auth.isDemo()) {
+        this.workingTimes = (await getDemoAttendance(this.userId)).workingTimes;
+        return;
+      }
+      this.workingTimes = (await getAttendance(this.userId, { refresh })).workingTimes;
     } catch (error) {
       console.error(
         "CHART ERROR:",

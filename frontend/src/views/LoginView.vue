@@ -49,6 +49,19 @@
         </button>
       </form>
 
+      <button
+        v-if="demoEnabled"
+        type="button"
+        class="secondary"
+        :disabled="loading"
+        @click="enterDemo"
+      >
+        Continue in Demo Mode
+      </button>
+      <p v-if="demoEnabled" class="switch">
+        Development demo. Attendance is saved on this device; profile changes require the backend.
+      </p>
+
       <p class="switch">
         No account yet?
         <router-link to="/register">Create one</router-link>
@@ -65,10 +78,13 @@ export default {
   name: "LoginView",
 
   data() {
-    return { email: "", password: "", error: "", loading: false };
+    return { email: "", password: "", error: "", loading: false, demoEnabled: auth.demoEnabled };
   },
 
   methods: {
+    enterDemo() {
+      if (auth.loginDemo()) this.$router.push({ name: "dashboard" });
+    },
     async submit() {
       this.error = "";
       this.loading = true;

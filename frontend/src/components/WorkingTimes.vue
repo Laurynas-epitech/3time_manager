@@ -126,6 +126,7 @@
           <button
             type="button"
             class="tm-btn edit-btn"
+            :disabled="workingTime.pending || !online"
             :aria-expanded="String(workingTime.id === editingId)"
             :aria-label="`Edit punch of ${formatShortDate(workingTime.start)}, ${formatTime(workingTime.start)} to ${formatTime(workingTime.end)}`"
             @click="toggleEdit(workingTime)"
@@ -159,7 +160,9 @@
 </template>
 
 <script>
-import api from "../api";
+import auth from "../auth";
+import { getAttendance, attendanceState } from "../services/attendance";
+import { getDemoAttendance } from "../services/demoAttendance";
 import RangeChips from "./RangeChips.vue";
 import WorkingTime from "./WorkingTime.vue";
 import {
@@ -229,6 +232,8 @@ export default {
   },
 
   computed: {
+    online() { return attendanceState.online; },
+    attendanceRevision() { return attendanceState.revision; },
     // [start, end) of the selected period; the read-only cards are not filtered
     period() {
       const today = startOfDay(new Date(this.now));
@@ -265,6 +270,7 @@ export default {
   },
 
   watch: {
+    attendanceRevision() { if (!auth.isDemo()) this.getWorkingTimes(false); },
     userId: {
       immediate: true,
 
@@ -311,7 +317,7 @@ export default {
       this.$emit("changed");
     },
 
-    async getWorkingTimes() {
+    async getWorkingTimes(refresh = true) {
       if (!this.userId) {
         this.workingTimes = [];
         return;
@@ -321,14 +327,14 @@ export default {
       this.error = "";
 
       try {
-        const response = await api.get(`/workingtime/${this.userId}`);
-        const data = response.data.data ?? response.data;
-
-        this.workingTimes = Array.isArray(data) ? data : [];
+        const attendance = auth.isDemo()
+          ? await getDemoAttendance(this.userId)
+          : await getAttendance(this.userId, { refresh });
+        this.workingTimes = attendance.workingTimes;
       } catch (error) {
         console.error("GET WORKING TIMES ERROR:", error);
         this.workingTimes = [];
-        this.error = "Could not load the punches.";
+        this.error = error.message || "Could not load the punches.";
       } finally {
         this.loading = false;
         this.$emit("loaded", this.workingTimes);

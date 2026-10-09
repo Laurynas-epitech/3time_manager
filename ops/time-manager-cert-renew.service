@@ -1,0 +1,10 @@
+[Unit]
+Description=Renew Time Manager short-lived IP certificate and reload Nginx
+After=network-online.target docker.service nginx.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/time-manager-cert-renew
+TimeoutStartSec=600
+UMask=0077

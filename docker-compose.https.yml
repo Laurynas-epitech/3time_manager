@@ -1,0 +1,5 @@
+# Apply only after the host Nginx certificate/configuration passes validation.
+services:
+  backend:
+    environment:
+      SECURE_COOKIES: "true"

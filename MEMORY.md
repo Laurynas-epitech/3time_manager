@@ -27,6 +27,15 @@ Deferred work keeps its actual status and explicitly says **DEFERRED** in its no
 
 | Date | Work completed | Verification / remaining work |
 |---|---|---|
+| October 9, 2026 | Integrated GitHub origin/main 4168804 (colleague dashboard/daily-weekly redesign) with local HTTPS and offline work on integration/offline-dashboard-20261009. | Resolved six conflicts in MEMORY, App, ClockManager, WorkingTimes, Dashboard and deleted style.css; kept design tokens/header/toasts/team navigation plus IndexedDB queue/auth/sync. Reports and team status use attendance snapshots; pending/offline punches cannot be edited. Frontend production/PWA build and backend Docker build passed. Updated frontend/tests/offline-attendance.cjs passed offline reload/new-tab persistence, 390px fit, cached report period switching, cross-tab clock, FIFO/original timestamps, duplicate retry, normal reconnect, expiry/account isolation, conflicts and offline logout against disposable local PostgreSQL. Test fixtures stayed local; test containers/network removed. Recovery stash offline-https-before-colleague-integration-20261009 retained. Four colleague criteria retained as PARTIAL; recomputed totals: 118 PASS, 39 PARTIAL, 15 FAIL, 22 NOT VERIFIED, 1 N/A; mandatory 108/34/10/18/1. Integrated redesign has not been deployed or pushed. |
+| October 9, 2026 | Deployed the offline attendance application on OVH at the owner's request. | Frontend/backend production images rebuilt with HTTPS overlay; UUID migration 20261009131557 applied; clean DB retained and incident DB stopped. Backup /var/backups/time-manager-offline-20261009T142508Z; previous images and pre-release dump retained. Local build passed. Live ovh-offline-check.cjs passed offline reload/new-tab reopening, persistent clock-in/out/history and automatic exactly-once synchronization of original UUIDs/timestamps at 390px. Temporary live account/attendance removed. Added offline-ready message and service-worker cache headers. Real-phone/native/full-page coverage remains outstanding; statuses/totals unchanged: 118 PASS, 35 PARTIAL, 19 FAIL, 22 NOT VERIFIED, 1 N/A. |
+| October 9, 2026 | Frontend only: daily/weekly hours over a selected period, "Punch Card" redesign (design-handoff/) of the app shell, Employee Today and Manager My team (`/team`, admins: "Dashboards" incl. "Everyone"), read-only Teams page for employees, punch edit fixes (scroll/inline edit, visible errors), toasts. No backend change. | Checked locally in headless Chromium (desktop 1440px + mobile 390px, no horizontal overflow; add/edit/delete punch, role redirects, employee team edits rejected by the API with 403). 4 items FAIL → PARTIAL (period/daily/weekly dashboards, individual hours); totals updated. Remaining redesign screens: Teams, People, Profile. ChartManager no longer rendered (Theme 02 decision pending). Not deployed to OVH. |
+| October 9, 2026 | Owner requested "do https", authorizing and applying the prepared OVH HTTPS cutover. | Trusted external TLS, HTTP 308 redirect, anonymous API 401 and browser registration/login/reload/logout, Secure/HttpOnly cookie and CSRF checks passed; temporary validation account removed. App ports are loopback-only; clean DB unchanged and incident DB still stopped. Configuration backup: /var/backups/time-manager-https-20261009T140237Z. Simulated certificate renewal passed; renewal timer enabled/active. See HTTPS_SETUP.md. Password transmission and HTTPS enforcement now PASS: 118 PASS, 35 PARTIAL, 19 FAIL, 22 NOT VERIFIED, 1 N/A. Local offline application/migration remains undeployed. |
+| October 9, 2026 | Implemented real-account offline attendance and automatic synchronization in the Vue PWA. | Production build/service worker passed; frontend npm run test:offline passed offline reload/tab reopening, 390px viewport, cross-tab attendance, local history/queue, FIFO original timestamps, automatic reconnect, lost-response deduplication, expiry/reauthentication, account isolation, conflict retention and offline logout. Backend mix precommit passed 29 tests in a separate disposable database partition. New UUID migration generated with mix ecto.gen.migration; OFFLINE_SETUP.md documents release order and limits. 10 criteria now PASS and 5 PARTIAL: totals 116 PASS, 36 PARTIAL, 20 FAIL, 22 NOT VERIFIED, 1 NOT APPLICABLE. Production deployment, HTTPS and real-phone/native assignment verification remain outstanding; HTTPS stays deferred. |
+| October 9, 2026 | Fixed development Demo Mode attendance saving without a backend. | services/demoAttendance.js stores clock state and completed sessions transactionally in a separate time-manager-demo IndexedDB database, isolated from real pendingActions. ClockManager, WorkingTimes, ChartManager and DashboardView use local demo data. Production build passed; ../_local_artifacts/theme05-browser-check/demo-clock-check.cjs passed clock-in/out, reload, history and logout/login persistence with zero API requests or browser errors. Real authenticated offline attendance and synchronization remain incomplete; mandatory checklist statuses/totals unchanged. |
+| October 9, 2026 | Completed the user's development demo-login integration and restored the original App.vue interface from its commented copy. | Added LoginView handler, development-only guards, session restoration/logout handling and demo-safe 401 routing. Removed duplicate registerSW import; installed missing vite-plugin-pwa and idb dependencies used by existing user edits. Vue component compilation and full production build passed, including generated service worker. Browser demo/login/reload/logout checks remain unverified. Actual dashboard offline persistence/replay is not connected; checklist statuses/totals unchanged. npm audit reports one high source-map-js advisory; no unrelated dependency upgrades applied. |
+| October 9, 2026 | Clarified the Vue frontend stylesheet location for manual mobile CSS edits. | frontend/src/main.js imports frontend/src/style.css; backend/assets/css/app.css belongs to Phoenix assets. Existing responsive rules also appear in frontend/src/App.vue. Source inspection only; requirement statuses and totals unchanged. |
+| October 9, 2026 | Reviewed how authentication can coexist with offline use and automatic synchronization. | Source inspection: frontend/src/auth.js restores sessions through the API and clears session state on request failure; no offline queue or persistence implementation found in frontend source. Explained prior online login, local data/action persistence and authenticated replay on reconnect. No implementation or checklist status/totals changed. |
 | October 9, 2026 | Audited and annotated all 195 checklist items; added evidence notes and remaining priorities. | 106 PASS, 31 PARTIAL, 35 FAIL, 22 NOT VERIFIED, 1 NOT APPLICABLE. Existing test/CI evidence is dated October 8; no fresh full live audit was run. |
 | October 9, 2026 | Added this legend and the persistent checklist-update workflow. | Documentation change only; implementation statuses and totals are unchanged. HTTPS remains deferred. |
 | October 9, 2026 | Organized 16 workspace artifacts into ../_local_artifacts and prepared team-facing plan/instructions and Git ignore rules. | Keys remain in the workspace root. Ignore checks and staged-content scan passed; no requirement statuses changed. Deferred HTTPS changes remain unstaged; no push/deployment performed. |
@@ -34,7 +43,6 @@ Deferred work keeps its actual status and explicitly says **DEFERRED** in its no
 | October 9, 2026 | Fetched GitHub and compared current branch and local main with origin/main. | Both comparisons: 0 ahead, 0 behind at fd75089. Local staged/untracked work is not published; checklist statuses unchanged. |
 
 | October 9, 2026 | Owner authorized committing and pushing the team plan, progress instructions and ignore rules on chore/project-plan-and-gitignore. | Staged files reviewed and diff checks passed. Deferred HTTPS changes excluded; application criteria/totals unchanged. |
-| October 9, 2026 | Frontend only: daily/weekly hours over a selected period, "Punch Card" redesign (design-handoff/) of the app shell, Employee Today and Manager My team (`/team`, admins: "Dashboards" incl. "Everyone"), read-only Teams page for employees, punch edit fixes (scroll/inline edit, visible errors), toasts. No backend change. | Checked locally in headless Chromium (desktop 1440px + mobile 390px, no horizontal overflow; add/edit/delete punch, role redirects, employee team edits rejected by the API with 403). 4 items FAIL → PARTIAL (period/daily/weekly dashboards, individual hours); totals updated. Remaining redesign screens: Teams, People, Profile. ChartManager no longer rendered (Theme 02 decision pending). Not deployed to OVH. |
 
 ## User-approved scope and priorities
 
@@ -42,11 +50,11 @@ Use the final checklist below as the project plan: Main Project and Themes 01, 0
 
 The source checklist says it has not been independently reverified against assignment documents. Consult the original brief when an exact criterion or conflict needs clarification. Mandatory requirements determine assignment completion. Track bootstrap-specific items, recommendations and optional enhancements separately; do not turn them into mandatory failures.
 
-## Persistent user decision: HTTPS deferred
+## Persistent user decision: HTTPS authorized and enabled
 
-The user explicitly chose to defer HTTPS and stick with HttpOnly JWT cookies for the current theme work. Keep JWT authentication, password hashing, CSRF checks and backend permissions intact. No HTTPS cutover is authorized. The pending HTTPS approval question was superseded by this decision; do not apply the prepared server setup.
+On October 9, 2026 the user explicitly requested "do https", replacing the earlier deferral and authorizing the prepared OVH HTTPS cutover. Trusted HTTPS is now serving https://57.130.61.152 with HTTP redirects, Secure/HttpOnly JWT cookies and loopback-only frontend/backend bindings. Keep password hashing, CSRF checks, backend permissions and both existing databases intact. The HTTPS cutover used existing images; the subsequent authorized October 9 application release deployed the offline frontend/backend and UUID migration, with live offline reopening and synchronization verified.
 
-HTTPS is not explicit in the supplied Theme 05 project criteria. However, the final checklist explicitly includes HTTPS enforcement and insecure-traffic interception testing under Theme 07. Therefore HTTPS is deferred, not permanently removed from the project plan. Revisit it with the user during Theme 07; do not silently mark that criterion complete or exempt it. HttpOnly prevents JavaScript from reading the cookie; it does not encrypt HTTP traffic.
+HTTPS enforcement and password transmission were verified using external trusted TLS and a temporary browser test account, removed after validation. Certificate renewal verification is recorded in HTTPS_SETUP.md. A complete Theme 07 interception/penetration assessment remains outstanding; enabling HTTPS does not complete that assessment.
 
 ## Current implementation baseline and evidence
 
@@ -55,9 +63,9 @@ HTTPS is not explicit in the supplied Theme 05 project criteria. However, the fi
 - Frontend production build passed. PR #4 GitHub CI passed frontend build, backend tests, and Docker image builds.
 - See `THEME05_VALIDATION.md`, `AUTHENTICATION_SETUP.md`, and `DATABASE_OPERATIONS.md` for detailed validation and deployment records. These records support specific findings, not blanket completion of every final checklist item.
 - The clean application database and authentication were deployed earlier; original incident database/evidence remains preserved. Never delete or initialize incident volumes.
-- Prepared, uncommitted HTTPS work is on branch `https-secure-cookies`: `HTTPS_SETUP.md`, `docker-compose.https.yml`, `ops/enable-https.sh`, Nginx/renewal files, and localhost port changes in `docker-compose.secure.yml`. They were not applied to OVH. Preserve them as deferred work; do not deploy or publish automatically.
+- HTTPS configuration is applied to OVH following the owner's October 9 request. Keep the HTTPS Compose overlay in future deployments and preserve the incident database/volume. The offline application and UUID migration are now deployed and live-tested. See HTTPS_SETUP.md for verification and rollback evidence.
 - Existing implementation uses `employee`, `manager`, `admin` roles. The Main Project checklist names Employee, Manager, General Manager. Verify semantic coverage and required naming before marking this criterion PASS.
-- No mobile implementation or completed Theme 07 penetration assessment has been verified in this session.
+- The existing Vue PWA now has locally and production-verified offline attendance and automatic synchronization on OVH; separate native mobile application, real-phone validation and completed Theme 07 penetration assessment remain unverified.
 - CI is verified; automatic CD remains outstanding in the available evidence.
 - The older `../_local_artifacts/EPITECH_TIME_MANAGER_CURRENT_HANDOFF.md` describes an earlier incident/recovery checkpoint and is stale where it conflicts with later deployment records.
 
@@ -69,7 +77,7 @@ HTTPS is not explicit in the supplied Theme 05 project criteria. However, the fi
 - Team documents: `MEMORY.md`, `AGENTS.md`, authentication/database runbooks and validation notes. Keep these tracked.
 - Repository `.gitignore` excludes secrets, private keys, backups/archives, incident evidence and generated outputs. Existing dependency/build ignores remain; lockfiles, migrations, source and `.env.example` remain eligible for tracking.
 - The outer workspace `.gitignore` provides an additional guard if someone initializes Git there; it is outside this repository and is not part of its team commit.
-- Deferred HTTPS work remains uncommitted and unstaged. Review explicit staged files rather than using `git add .` for this preparation.
+- HTTPS work is deployed but local changes remain uncommitted. Review explicit staged files rather than using `git add .`; never publish keys or server certificate files.
 
 ## Checklist status and remaining work
 
@@ -77,28 +85,28 @@ Checked boxes mean PASS. Unchecked boxes distinguish PARTIAL, FAIL, NOT VERIFIED
 
 | Scope | PASS | PARTIAL | FAIL | NOT VERIFIED | NOT APPLICABLE |
 |---|---:|---:|---:|---:|---:|
-| All checklist items | 106 | 35 | 31 | 22 | 1 |
-| Mandatory items only | 100 | 31 | 21 | 18 | 1 |
+| All checklist items | 118 | 39 | 15 | 22 | 1 |
+| Mandatory items only | 108 | 34 | 10 | 18 | 1 |
 
 ### Concrete remaining priorities
 
 1. Reconcile General Manager/admin naming and responsibilities; manager team creation is admin-only while managers can manage memberships.
-2. Add per-day/per-week individual and team aggregates and period selection; existing average is per entry, not average daily/weekly team hours.
+2. Verify and release the integrated individual daily/weekly hours views; team-wide daily/weekly averages and General Manager naming remain outstanding.
 3. Enforce database NOT NULL constraints for required fields with reviewed data-preserving migrations; tighten email validation to the required format.
 4. Reconcile the Theme 02 named routes/User component criteria with the later authentication views; add needed compatibility routes and exact date/time presentation, plus chart controls and accessibility verification.
 5. Add safe automatic CD; existing CI already passes.
-6. Build Theme 06 mobile/offline functionality after checking its original documents.
-7. Complete Theme 07 assessment/fixes/retests, including mobile; revisit deferred HTTPS with the user.
+6. Validate the original Theme 06 mobile brief against the deployed Vue PWA; verify real phones and all required pages. Backend/migration and frontend are now released over HTTPS with live offline attendance verification.
+7. Complete Theme 07 assessment/fixes/retests, including mobile and interception coverage; HTTPS is enabled and must be preserved.
 8. Collect missing Postman, UX, accessibility and employee-protection evidence. Bootstrap-only mismatches are tracked separately and do not by themselves invalidate Theme 05.
 
 ### Evidence keys used below
 
 - **E1 - API/data:** `backend/lib/time_manager_web/router.ex`, user/clock/working-time schemas, `backend/priv/repo/migrations/`, API controller/tests; `DATABASE_OPERATIONS.md` migration/restore record. The required local port is configured, not freshly exercised on Windows.
 - **E2 - Account/role/team behavior:** `backend/lib/time_manager_web/authorization.ex`, UserController/TeamController, `frontend/src/views/ProfileView.vue`, AdminView, TeamsView, DashboardView; `backend/test/time_manager_web/controllers/permissions_test.exs`. General Manager-specific items remain PARTIAL because the implemented role is named admin. Profile self-deletion exists in code; every-role browser deletion was not repeated.
-- **E3 - Web/chart evidence:** `frontend/src/App.vue`, `frontend/src/router.js`, `frontend/src/components/{WorkingTimes,WorkingTime,ClockManager,ChartManager}.vue`, `frontend/src/views/`; frontend build and prior UI checks in `AUTHENTICATION_SETUP.md`. ChartManager has bar/line/pie views of per-record durations, not verified daily/weekly aggregates.
-- **E4 - Infrastructure:** `docker-compose.yml`, `docker-compose.secure.yml`, Dockerfiles, `.github/workflows/ci.yml`, `DATABASE_OPERATIONS.md`, `AUTHENTICATION_SETUP.md`; successful [PR #4 CI run](https://github.com/Laurynas-epitech/3time_manager/actions/runs/37793116761). Prepared HTTPS edits are not deployed infrastructure evidence.
+- **E3 - Web/chart evidence:** `frontend/src/App.vue`, `frontend/src/router.js`, `frontend/src/components/{WorkingTimes,WorkingTime,ClockManager,ChartManager}.vue`, `frontend/src/views/`; frontend build and prior UI checks in `AUTHENTICATION_SETUP.md`. The colleague's HoursReport/Today/MyTeam redesign provides individual daily/weekly aggregates and period selection; merged locally with offline snapshots. ChartManager remains in source but is not rendered by the redesign, so its current UI/route coverage still needs review.
+- **E4 - Infrastructure:** `docker-compose.yml`, `docker-compose.secure.yml`, Dockerfiles, `.github/workflows/ci.yml`, `DATABASE_OPERATIONS.md`, `AUTHENTICATION_SETUP.md`; successful [PR #4 CI run](https://github.com/Laurynas-epitech/3time_manager/actions/runs/37793116761). October 9 HTTPS cutover is now deployed and externally TLS/browser verified; see HTTPS_SETUP.md for certificate, renewal and rollback evidence.
 - **E5 - Authentication:** `THEME05_VALIDATION.md`, `AUTHENTICATION_SETUP.md`, `backend/lib/time_manager/auth/token.ex`, AuthCookie/Authenticate, seeds, role/team migrations, `frontend/src/auth.js`, API/router/views and backend tests. 27 tests passed. JWT includes the issued role; request authorization reloads current role from DB so demotions take effect. Logout clears the cookie but cannot revoke an already copied JWT.
-- **E6 - Mobile:** no dedicated mobile app, service worker/offline queue or mobile persistence implementation found in the repository. Layout responsiveness does not establish mobile/offline completion.
+- **E6 - Mobile/offline:** October 9 implementation: frontend/src/services/{attendance,offlineSession,demoAttendance}.js, auth.js, ClockManager/WorkingTimes/ChartManager, App.vue sync status and vite.config.js PWA caching. Backend clock UUID migration/schema/JSON and transactional record_clock enforce idempotent retries and request ownership/permissions. Production build and frontend/tests/offline-attendance.cjs passed on localhost with a 390px browser viewport and a disposable real backend/database; backend mix precommit passed 29 tests in a separate disposable partition. OFFLINE_SETUP.md records behavior, commands, release order and limits. Local and live OVH offline attendance are verified. The October 9 release applied the UUID migration and rebuilt frontend/backend with the HTTPS overlay, preserving both databases and limited app role. Live ../_local_artifacts/theme05-browser-check/ovh-offline-check.cjs passed offline reload/new-tab reopening and automatic exactly-once replay of original timestamps/UUIDs; temporary account/attendance removed. Backup /var/backups/time-manager-offline-20261009T142508Z. Real-phone/native brief coverage and every mobile page remain incomplete.
 - **E7 - Security:** incident/auth records document some issues; no complete Theme 07 penetration-test/injection/DoS/mobile report was found. Unverified security criteria must be investigated on authorized isolated targets, not assumed passed.
 
 ## Next work sequence
@@ -106,7 +114,7 @@ Checked boxes mean PASS. Unchecked boxes distinguish PARTIAL, FAIL, NOT VERIFIED
 1. Audit the current Main Project and Themes 01/02/03/05 against the final checklist. Record PASS, PARTIAL, FAIL, NOT VERIFIED, or NOT APPLICABLE with evidence. Do not infer completion from filenames or merged PRs alone.
 2. Resolve confirmed mandatory gaps, including dashboards/team aggregates, route/component compatibility and automatic deployment where required. Do not redesign features solely for optional recommendations.
 3. Review original Theme 06 documents before implementation choices; build the required mobile pages/authentication and offline clocking/persistence/synchronization. Keep bootstrap FIFO/progress/error requirements separately classified.
-4. Perform Theme 07 security testing against authorized isolated/test targets; patch and verify findings. Include mobile and revisit HTTPS at that stage. A checklist entry does not authorize flooding or denial-of-service testing against the live OVH service.
+4. Perform Theme 07 security testing against authorized isolated/test targets; patch and verify findings. Include mobile and preserve the now-enabled HTTPS deployment. A checklist entry does not authorize flooding or denial-of-service testing against the live OVH service.
 5. Complete the final evidence audit and deliverables. Mark checkboxes only after verification, preserving supporting paths/results.
 
 This file records the plan; creating it does not start implementation of all checklist items, deploy HTTPS, or authorize destructive database operations.
@@ -376,28 +384,28 @@ These are specified in the Authentication Bootstrap rather than all being strict
 
 ### Mobile application
 
-- [ ] A mobile version of the application exists. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
+- [ ] A mobile version of the application exists. **[PARTIAL]** — Vue PWA builds with a manifest, cached interface and attendance verified at a 390px viewport. Separate native-app/original mobile brief coverage and real-phone validation remain outstanding. (E6)
 - [ ] Every required web application page has a mobile version, except dashboards. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
-- [ ] Mobile authentication works. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
-- [ ] The mobile interface is functional and usable. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
+- [ ] Mobile authentication works. **[PARTIAL]** — PWA online login, cached offline profile, expiry, account isolation and reauthentication are browser-tested; real-phone/native brief verification remains outstanding. (E6)
+- [ ] The mobile interface is functional and usable. **[PARTIAL]** — Attendance workflow verified at 390px in a browser; full mobile-page usability and real-device checks remain outstanding. (E6)
 
 ### Offline mode
 
-- [ ] The mobile application works when the device is offline. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
-- [ ] Relevant application data is stored locally. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
-- [ ] Local storage or a mobile database is used for offline persistence. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
-- [ ] Clock-in actions can be recorded while offline. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
-- [ ] Clock-out actions can be recorded while offline. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
-- [ ] Offline actions are retained until synchronization. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
-- [ ] Offline changes are automatically synchronized when connectivity returns. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
+- [ ] The mobile application works when the device is offline. **[PARTIAL]** — Deployed PWA attendance reopens offline after an initial online visit and survives closing the tab; verified on live OVH HTTPS at 390px. Real-phone/native brief and all-page coverage remain outstanding. (E6)
+- [x] Relevant application data is stored locally. **[PASS]** — Profile, server attendance snapshot, completed sessions and pending events persist per API/account; browser reopening and account-isolation tests passed locally. (E6)
+- [x] Local storage or a mobile database is used for offline persistence. **[PASS]** — IndexedDB snapshots/actions and localStorage profile; no cached passwords or JWT copies. Persistence verified through tab reopening. (E6)
+- [x] Clock-in actions can be recorded while offline. **[PASS]** — Real-account offline clock-in queued with UUID and original UTC timestamp; browser tests passed. (E6)
+- [x] Clock-out actions can be recorded while offline. **[PASS]** — Real-account offline clock-out persists and projects completed local sessions; browser tests passed. (E6)
+- [x] Offline actions are retained until synchronization. **[PASS]** — Persistent queue entries removed only after matching server acknowledgement. Reload, logout, expiry, conflict and lost-response retention verified. (E6)
+- [x] Offline changes are automatically synchronized when connectivity returns. **[PASS]** — Reconnect without a button drains the queue; startup/login/focus/visibility and 30-second retry also trigger authenticated synchronization while the app is open. Verified locally and on the live OVH HTTPS deployment. (E6)
 
 ### Bootstrap-specific criteria
 
-- [ ] Offline requests are maintained in FIFO order. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
-- [ ] Local data is refreshed when the application reconnects. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
-- [ ] Server data is prioritized as described in the Bootstrap. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
-- [ ] Synchronization displays progress to the user. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
-- [ ] Synchronization errors are handled appropriately. **[FAIL]** — No dedicated mobile/offline persistence or synchronization implementation found. (E6)
+- [x] Offline requests are maintained in FIFO order. **[PASS]** — Auto-incremented IndexedDB sequence with serial replay and Web Locks; timestamps and ID order verified end to end. (E6)
+- [x] Local data is refreshed when the application reconnects. **[PASS]** — Authoritative server clocks/history refresh after successful replay; status/history/statistics use the updated snapshot. Browser tests passed. (E6)
+- [ ] Server data is prioritized as described in the Bootstrap. **[PARTIAL]** — Successful replay replaces snapshots with server data; rejected/conflicting events are retained for reconciliation. Exact original Bootstrap conflict policy has not been checked and automatic conflict resolution is not implemented. (E6)
+- [x] Synchronization displays progress to the user. **[PASS]** — App.vue shows offline/pending/sync counts, completion, errors and manual retry. Browser scenarios verified. (E6)
+- [x] Synchronization errors are handled appropriately. **[PASS]** — Network retries retain events; 401 requests login; 403/422 stop ordered replay and retain remaining actions. Lost response, expiry, conflict and account-isolation tests passed. (E6)
 
 ### Recommended mobile UX
 
@@ -428,13 +436,13 @@ These are specified in the Authentication Bootstrap rather than all being strict
 - [x] Unauthorized access to backend endpoints is tested. **[PASS]** — Specific auth/permission checks covered by tests and recorded browser/API verification; not a full penetration assessment. (E5)
 - [x] JWT cookie HttpOnly protection is checked. **[PASS]** — Specific auth/permission checks covered by tests and recorded browser/API verification; not a full penetration assessment. (E5)
 - [ ] Potential JWT theft scenarios are investigated. **[PARTIAL]** — HttpOnly and expiry covered; copied-token revocation/broader theft scenarios remain. (E7)
-- [ ] Password transmission security is checked. **[PARTIAL]** — HTTP transport risk identified; encrypted transmission remains deferred. (E7)
+- [x] Password transmission security is checked. **[PASS]** — October 9 external trusted TLS and browser registration/login verified HTTPS password requests; public app ports are loopback-only and HTTP redirects to HTTPS. Full interception assessment remains separate. (E7)
 
 ### Availability and network security
 
 - [ ] The possibility of database flooding or denial of service is tested. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
 - [ ] Appropriate protections are implemented for identified denial-of-service weaknesses. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
-- [ ] HTTPS enforcement is verified. **[FAIL]** — DEFERRED by owner: HTTPS files are prepared but not deployed. Revisit for Theme 07. (E7)
+- [x] HTTPS enforcement is verified. **[PASS]** — Owner authorized October 9 OVH cutover: trusted IP certificate, HTTP 308 redirect, Secure/HttpOnly cookies, HTTPS API/login/logout and loopback-only app bindings verified. (E7)
 - [ ] Risks of traffic interception over insecure connections are investigated. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
 
 ### Additional security coverage

@@ -77,7 +77,9 @@
 </template>
 
 <script>
-import api from "../api";
+import auth from "../auth";
+import { getAttendance, recordAttendance, attendanceState } from "../services/attendance";
+import { getDemoAttendance, toggleDemoClock } from "../services/demoAttendance";
 import {
   addDays,
   formatHours,
@@ -145,6 +147,7 @@ export default {
   },
 
   computed: {
+    attendanceRevision() { return attendanceState.revision; },
     todayLabel() {
       return new Date(this.now).toLocaleDateString(undefined, {
         weekday: "long",
@@ -190,6 +193,7 @@ export default {
   },
 
   watch: {
+    attendanceRevision() { if (!auth.isDemo()) this.refresh(false); },
     userId: {
       immediate: true,
 
@@ -214,27 +218,20 @@ export default {
     formatHours,
     formatTime,
 
-    async refresh() {
+    async refresh(refresh = true) {
       if (!this.userId) return;
       this.loading = true;
       this.error = "";
 
       try {
-        const response = await api.get(`/clock/${this.userId}`);
-        const data = response.data.data ?? response.data;
-
-        if (Array.isArray(data) && data.length > 0) {
-          const latestClock = data[data.length - 1];
-
-          this.clockIn = latestClock.status;
-          this.startDateTime = latestClock.status ? latestClock.time : null;
-        } else {
-          this.clockIn = false;
-          this.startDateTime = null;
-        }
+        const attendance = auth.isDemo()
+          ? await getDemoAttendance(this.userId)
+          : await getAttendance(this.userId, { refresh });
+        this.clockIn = attendance.clockIn;
+        this.startDateTime = attendance.startDateTime;
       } catch (error) {
         console.error("REFRESH CLOCK ERROR:", error);
-        this.error = "Unable to load attendance status. Please try again.";
+        this.error = error.message || "Unable to load attendance status. Please try again.";
       } finally {
         this.loading = false;
         this.$emit("status", { clockIn: this.clockIn, startDateTime: this.startDateTime });
@@ -247,17 +244,13 @@ export default {
       this.error = "";
 
       try {
-        await api.post(`/clock/${this.userId}`, {
-          clock: {
-            time: new Date().toISOString(),
-            status: !this.clockIn,
-          },
-        });
-        await this.refresh();
+        if (auth.isDemo()) await toggleDemoClock(this.userId);
+        else await recordAttendance(this.userId, !this.clockIn);
+        await this.refresh(false);
         this.$emit("clock-changed");
       } catch (error) {
         console.error("CLOCK ERROR:", error);
-        this.error = "Unable to save attendance. Please refresh and try again.";
+        this.error = error.message || "Unable to save attendance. Please refresh and try again.";
       } finally {
         this.saving = false;
       }
