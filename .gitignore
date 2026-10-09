@@ -28,3 +28,33 @@ dist-ssr
 .env.*
 !.env.example
 .secrets/
+
+# Private keys and credential containers (including accidental SSH key copies)
+/time
+/time.pub
+id_rsa
+id_ed25519
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+
+# Local archives, backups, incident evidence and validation artifacts
+/_local_artifacts/
+/backups/
+/incident-evidence/
+*.tar
+*.tar.gz
+*.tgz
+*.dump
+*.backup
+*.sql.gz
+
+# Generated test output and local tool caches
+coverage/
+playwright-report/
+test-results/
+.cache/
+.npm/
+.codex/
