@@ -1,0 +1,97 @@
+/* Time Manager — "Punch Card" design tokens
+   Drop this file into the frontend and import it once at the app root.
+   Fonts: add to index.html <head>:
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+*/
+
+:root {
+  /* Color */
+  --tm-ground: #FBF7F0;        /* page background (warm paper) */
+  --tm-surface: #FFFFFF;       /* cards */
+  --tm-sunken: #F1ECE3;        /* neutral stat tile, avatar fill */
+  --tm-ink: #1F1A17;           /* text, borders, hard shadows, dark buttons */
+  --tm-ink-muted: #5E544C;     /* secondary text (passes 4.5:1 on ground + white) */
+  --tm-line-dashed: #B8AEA3;   /* empty/future slots */
+  --tm-divider: #E6DED3;       /* dashed row dividers */
+
+  --tm-primary: #2F4BD8;       /* cobalt: hero card, completed hours, employee role */
+  --tm-primary-soft: #DCE3FF;
+  --tm-primary-text: #1F35A8;  /* cobalt text on soft fill */
+
+  --tm-accent: #E8743B;        /* tangerine: clock-in button, current day/week, manager role */
+  --tm-accent-soft: #FFE6D6;
+  --tm-accent-text: #6B2E0E;   /* on soft tangerine */
+  --tm-accent-strong: #B4501E; /* tangerine used as text on light (today labels) */
+
+  --tm-live: #27A35A;          /* "clocked in" dot */
+  --tm-live-soft: #E1F4E7;
+  --tm-live-text: #1D6B3E;
+  --tm-danger: #A12626;        /* delete icons */
+
+  /* Type */
+  --tm-font-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+  --tm-font-body: 'Figtree', 'Segoe UI', system-ui, sans-serif;
+  --tm-fs-hero: 52px;   /* page titles, hero greeting — weight 800, letter-spacing -0.04em */
+  --tm-fs-h2: 26px;     /* card titles — 800, -0.02em */
+  --tm-fs-stat: 34px;   /* stat tile numbers — 800, -0.03em */
+  --tm-fs-body: 15px;
+  --tm-fs-small: 13px;
+
+  /* Shape */
+  --tm-border: 2px solid var(--tm-ink);
+  --tm-radius-card: 28px;
+  --tm-radius-tile: 18px;
+  --tm-radius-input: 14px;
+  --tm-radius-pill: 999px;
+  --tm-shadow: 6px 6px 0 var(--tm-ink);       /* hard offset shadow on primary cards */
+  --tm-shadow-sm: 4px 4px 0 var(--tm-ink);    /* buttons, selected cards */
+
+  /* Spacing & layout */
+  --tm-gap-section: 28px;
+  --tm-gap: 14px;
+  --tm-pad-card: 28px;
+  --tm-max-width: 1160px;
+  --tm-hit: 44px;  /* minimum touch target */
+}
+
+body {
+  margin: 0;
+  background: var(--tm-ground);
+  color: var(--tm-ink);
+  font-family: var(--tm-font-body);
+}
+
+/* Reusable primitives */
+.tm-card { background: var(--tm-surface); border: var(--tm-border); border-radius: var(--tm-radius-card); box-shadow: var(--tm-shadow); padding: var(--tm-pad-card); }
+.tm-card--flat { box-shadow: none; }
+.tm-card--primary { background: var(--tm-primary); color: #fff; }
+.tm-card--accent { background: var(--tm-accent-soft); }
+.tm-card--dashed { border-style: dashed; box-shadow: none; background: transparent; }
+
+.tm-h1 { font-family: var(--tm-font-display); font-size: var(--tm-fs-hero); font-weight: 800; letter-spacing: -0.04em; margin: 0; }
+.tm-h2 { font-family: var(--tm-font-display); font-size: var(--tm-fs-h2); font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+.tm-num { font-family: var(--tm-font-display); font-weight: 800; letter-spacing: -0.03em; }
+
+.tm-btn { min-height: 48px; padding: 0 20px; border: var(--tm-border); border-radius: var(--tm-radius-pill); font: inherit; font-weight: 700; cursor: pointer; background: transparent; color: var(--tm-ink); }
+.tm-btn--dark { background: var(--tm-ink); color: var(--tm-ground); }
+.tm-btn--primary { background: var(--tm-primary); color: #fff; box-shadow: var(--tm-shadow-sm); }
+.tm-btn--accent { background: var(--tm-accent); color: var(--tm-ink); box-shadow: var(--tm-shadow-sm); }
+.tm-btn:focus-visible, .tm-input:focus-visible { outline: 3px solid var(--tm-primary); outline-offset: 2px; }
+
+.tm-chip { min-height: var(--tm-hit); padding: 0 16px; border: var(--tm-border); border-radius: var(--tm-radius-pill); background: transparent; font: inherit; font-weight: 600; cursor: pointer; }
+.tm-chip[aria-pressed="true"] { background: var(--tm-ink); color: var(--tm-ground); font-weight: 700; }
+
+.tm-input { min-height: 48px; padding: 0 14px; border: var(--tm-border); border-radius: var(--tm-radius-input); background: #fff; font: inherit; font-weight: 500; color: var(--tm-ink); box-sizing: border-box; }
+.tm-label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700; }
+
+.tm-role { padding: 4px 10px; border-radius: var(--tm-radius-pill); font-size: var(--tm-fs-small); font-weight: 700; }
+.tm-role--employee { background: var(--tm-primary-soft); color: var(--tm-primary-text); }
+.tm-role--manager { background: var(--tm-accent-soft); color: var(--tm-accent-text); }
+.tm-role--admin { background: var(--tm-ink); color: var(--tm-ground); }
+
+.tm-stat { padding: 18px; border-radius: var(--tm-radius-tile); }
+.tm-stat__label { font-size: 14px; font-weight: 600; }
+.tm-stat__value { font-family: var(--tm-font-display); font-size: var(--tm-fs-stat); font-weight: 800; letter-spacing: -0.03em; }
+
+.tm-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

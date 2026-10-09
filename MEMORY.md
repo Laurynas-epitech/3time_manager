@@ -34,6 +34,7 @@ Deferred work keeps its actual status and explicitly says **DEFERRED** in its no
 | October 9, 2026 | Fetched GitHub and compared current branch and local main with origin/main. | Both comparisons: 0 ahead, 0 behind at fd75089. Local staged/untracked work is not published; checklist statuses unchanged. |
 
 | October 9, 2026 | Owner authorized committing and pushing the team plan, progress instructions and ignore rules on chore/project-plan-and-gitignore. | Staged files reviewed and diff checks passed. Deferred HTTPS changes excluded; application criteria/totals unchanged. |
+| October 9, 2026 | Frontend only: daily/weekly hours over a selected period, "Punch Card" redesign (design-handoff/) of the app shell, Employee Today and Manager My team (`/team`, admins: "Dashboards" incl. "Everyone"), read-only Teams page for employees, punch edit fixes (scroll/inline edit, visible errors), toasts. No backend change. | Checked locally in headless Chromium (desktop 1440px + mobile 390px, no horizontal overflow; add/edit/delete punch, role redirects, employee team edits rejected by the API with 403). 4 items FAIL → PARTIAL (period/daily/weekly dashboards, individual hours); totals updated. Remaining redesign screens: Teams, People, Profile. ChartManager no longer rendered (Theme 02 decision pending). Not deployed to OVH. |
 
 ## User-approved scope and priorities
 
@@ -76,8 +77,8 @@ Checked boxes mean PASS. Unchecked boxes distinguish PARTIAL, FAIL, NOT VERIFIED
 
 | Scope | PASS | PARTIAL | FAIL | NOT VERIFIED | NOT APPLICABLE |
 |---|---:|---:|---:|---:|---:|
-| All checklist items | 106 | 31 | 35 | 22 | 1 |
-| Mandatory items only | 100 | 27 | 25 | 18 | 1 |
+| All checklist items | 106 | 35 | 31 | 22 | 1 |
+| Mandatory items only | 100 | 31 | 21 | 18 | 1 |
 
 ### Concrete remaining priorities
 
@@ -136,7 +137,7 @@ Use the checkboxes to track completion. Mark a requirement complete only after v
 - [x] All users can view their own dashboard. **[PASS]** — Implemented in account/dashboard/team/clock flows and permissions. (E2)
 - [ ] Managers and the General Manager can manage their team(s). **[PARTIAL]** — Implementation uses admin rather than General Manager; reconcile naming and required semantics. (E2)
 - [ ] Managers and the General Manager can view average daily and weekly working hours of teams over a selected period. **[FAIL]** — No daily/weekly aggregates or dashboard period selector; charts show per-entry durations. (E3)
-- [ ] Managers and the General Manager can view an individual employee's daily and weekly working hours over a selected period. **[FAIL]** — No daily/weekly aggregates or dashboard period selector; charts show per-entry durations. (E3)
+- [ ] Managers and the General Manager can view an individual employee's daily and weekly working hours over a selected period. **[PARTIAL]** — Implemented in `frontend/src/components/HoursReport.vue` (period chips + custom dates, daily bars up to 14 days, weekly bars beyond, total / per week / per worked day / days worked, accessible table) on Today and on /team (`MyTeamView.vue`); checked in a local headless browser on October 9, 2026 (Europe/Paris, midnight-crossing session split correctly). Not yet deployed or covered by automated frontend tests. Managers reach their team members (backend still returns 403 outside their teams) and admins everyone via /team. Remaining: deployment evidence and the General Manager/admin naming. (E3)
 - [ ] Managers and the General Manager can view their employees' dashboards. **[PARTIAL]** — Implementation uses admin rather than General Manager; reconcile naming and required semantics. (E2)
 - [ ] The General Manager can promote an employee to Manager. **[PARTIAL]** — Implementation uses admin rather than General Manager; reconcile naming and required semantics. (E2)
 - [ ] The General Manager can view all users' dashboards. **[PARTIAL]** — Implementation uses admin rather than General Manager; reconcile naming and required semantics. (E2)
@@ -144,9 +145,9 @@ Use the checkboxes to track completion. Mark a requirement complete only after v
 
 ### Dashboards, accessibility and employee protection
 
-- [ ] Dashboards display daily working hours. **[FAIL]** — No daily/weekly aggregates or dashboard period selector; charts show per-entry durations. (E3)
-- [ ] Dashboards display weekly working hours. **[FAIL]** — No daily/weekly aggregates or dashboard period selector; charts show per-entry durations. (E3)
-- [ ] Dashboard data can be viewed over a selected period. **[FAIL]** — No daily/weekly aggregates or dashboard period selector; charts show per-entry durations. (E3)
+- [ ] Dashboards display daily working hours. **[PARTIAL]** — Implemented in `frontend/src/components/HoursReport.vue` (period chips + custom dates, daily bars up to 14 days, weekly bars beyond, total / per week / per worked day / days worked, accessible table) on Today and on /team (`MyTeamView.vue`); checked in a local headless browser on October 9, 2026 (Europe/Paris, midnight-crossing session split correctly). Not yet deployed or covered by automated frontend tests. Remaining: deployment evidence. (E3)
+- [ ] Dashboards display weekly working hours. **[PARTIAL]** — Implemented in `frontend/src/components/HoursReport.vue` (period chips + custom dates, daily bars up to 14 days, weekly bars beyond, total / per week / per worked day / days worked, accessible table) on Today and on /team (`MyTeamView.vue`); checked in a local headless browser on October 9, 2026 (Europe/Paris, midnight-crossing session split correctly). Not yet deployed or covered by automated frontend tests. Remaining: deployment evidence. (E3)
+- [ ] Dashboard data can be viewed over a selected period. **[PARTIAL]** — Implemented in `frontend/src/components/HoursReport.vue` (period chips + custom dates, daily bars up to 14 days, weekly bars beyond, total / per week / per worked day / days worked, accessible table) on Today and on /team (`MyTeamView.vue`); checked in a local headless browser on October 9, 2026 (Europe/Paris, midnight-crossing session split correctly). Not yet deployed or covered by automated frontend tests. Remaining: deployment evidence. (E3)
 - [ ] The application is accessible, including for users with visual impairments. **[NOT VERIFIED]** — Labels exist; keyboard, contrast, screen-reader and chart alternatives need auditing. (E3)
 - [ ] The application considers protections against unethical usage, such as employee surveillance. **[PARTIAL]** — Role/team restrictions exist; employee-protection policy/design review remains. (E2)
 - [ ] Additional relevant features are considered based on research and audits. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E2)
@@ -268,7 +269,7 @@ Use the checkboxes to track completion. Mark a requirement complete only after v
 
 ### ChartManager component
 
-- [x] A `ChartManager` component exists. **[PASS]** — Present in Vue source, inspected logic and prior build/UI evidence. (E3)
+- [x] A `ChartManager` component exists. **[PASS]** — Present in Vue source, inspected logic and prior build/UI evidence. Note (October 9, 2026): the Punch Card redesign (design-handoff/DESIGN.md) removed it from the dashboard; the file is kept but no page renders it. Decide whether to restore it on `/chartManager/:userid` for Theme 02. (E3)
 - [ ] Route `/chartManager/:userid` exists. **[FAIL]** — Specified URL is absent from frontend router; features are embedded in dashboard. (E3)
 - [x] At least three graphs are displayed. **[PASS]** — Present in Vue source, inspected logic and prior build/UI evidence. (E3)
 - [x] Graphs use different visualization types, such as bar, line, pie or radar. **[PASS]** — Present in Vue source, inspected logic and prior build/UI evidence. (E3)

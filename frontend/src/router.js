@@ -8,6 +8,7 @@ import RegisterView from "./views/RegisterView.vue";
 import DashboardView from "./views/DashboardView.vue";
 import ProfileView from "./views/ProfileView.vue";
 import TeamsView from "./views/TeamsView.vue";
+import MyTeamView from "./views/MyTeamView.vue";
 import AdminView from "./views/AdminView.vue";
 
 const routes = [
@@ -17,10 +18,17 @@ const routes = [
   { path: "/", name: "dashboard", component: DashboardView, meta: { requiresAuth: true } },
   { path: "/profile", name: "profile", component: ProfileView, meta: { requiresAuth: true } },
   {
+    path: "/team",
+    name: "my-team",
+    component: MyTeamView,
+    meta: { requiresAuth: true, roles: ["manager", "admin"] },
+  },
+  {
     path: "/teams",
     name: "teams",
     component: TeamsView,
-    meta: { requiresAuth: true, roles: ["manager", "admin"] },
+    // Everyone can see their teams; only managers/admins get the edit controls.
+    meta: { requiresAuth: true },
   },
   {
     path: "/admin",

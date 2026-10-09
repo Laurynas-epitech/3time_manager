@@ -1,77 +1,29 @@
 <template>
   <div class="app">
-    <header class="topbar">
-      <div class="topbar-content">
-        <div>
-          <h1>Time Manager</h1>
-          <p>Manage employee working time and attendance.</p>
-        </div>
+    <AppHeader
+      :user="user"
+      @logout="logout"
+    />
 
-        <div
-          v-if="user"
-          class="session"
-        >
-          <nav class="nav">
-            <router-link to="/">Dashboard</router-link>
-
-            <router-link
-              v-if="isManagerOrAdmin"
-              to="/teams"
-            >
-              Teams
-            </router-link>
-
-            <router-link
-              v-if="isAdmin"
-              to="/admin"
-            >
-              Admin
-            </router-link>
-
-            <router-link to="/profile">Profile</router-link>
-          </nav>
-
-          <span>
-            {{ user.username }}
-            <span
-              class="role-badge"
-              :class="user.role"
-            >
-              {{ user.role }}
-            </span>
-          </span>
-
-          <button
-            class="secondary"
-            @click="logout"
-          >
-            Log out
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <main class="dashboard">
+    <main class="page">
       <router-view />
     </main>
+
+    <AppToast />
   </div>
 </template>
 
 <script>
 import auth from "./auth";
+import AppHeader from "./components/AppHeader.vue";
+import AppToast from "./components/AppToast.vue";
 
 export default {
+  components: { AppHeader, AppToast },
+
   computed: {
     user() {
       return auth.state.user;
-    },
-
-    isAdmin() {
-      return auth.hasRole("admin");
-    },
-
-    isManagerOrAdmin() {
-      return auth.hasRole("manager", "admin");
     },
   },
 
@@ -85,6 +37,10 @@ export default {
 </script>
 
 <style>
+/* Global "Punch Card" base styles (tokens live in styles/tokens.css).
+   The generic classes below (.card, .field, .error-msg, ...) keep the screens
+   that are not rebuilt yet consistent with the new look. */
+
 * {
   box-sizing: border-box;
 }
@@ -96,345 +52,116 @@ body,
   min-height: 100%;
 }
 
-/* Undo the Vite template defaults from style.css */
-#app {
-  width: 100%;
-  text-align: left;
-  border-inline: none;
+body {
+  font-size: var(--tm-fs-body);
+  line-height: 1.45;
 }
 
-body {
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-
-  background: #f4f6fa;
-  color: #1f2937;
+h1,
+h2,
+h3 {
+  font-family: var(--tm-font-display);
+  letter-spacing: -0.02em;
 }
 
 button,
 input,
 select {
   font: inherit;
-}
-
-/* HEADER */
-
-.topbar {
-  background: #111827;
-  color: white;
-  padding: 26px 20px;
-}
-
-.topbar-content {
-  max-width: 1150px;
-  margin: auto;
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 30px;
-}
-
-.topbar h1 {
-  margin: 0;
-  color: white;
-  font-size: 28px;
-}
-
-.topbar p {
-  margin: 6px 0 0;
-  color: #9ca3af;
-}
-
-.user-selector {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-
-  min-width: 300px;
-}
-
-.user-selector label {
-  color: #d1d5db;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.user-selector select {
-  width: 100%;
-  padding: 11px 13px;
-
-  border: 1px solid #374151;
-  border-radius: 9px;
-
-  background: #1f2937;
-  color: white;
-
-  outline: none;
+  color: inherit;
 }
 
 /* MAIN */
 
-.dashboard {
-  max-width: 1150px;
-  margin: auto;
+.page {
+  max-width: var(--tm-max-width);
+  margin: 0 auto;
+  padding: 12px clamp(16px, 3vw, 32px) 64px;
+}
 
-  padding: 30px 18px 60px;
-
-  display: grid;
-  gap: 22px;
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-gap-section);
 }
 
 .card {
-  background: white;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-
-  padding: 24px;
-
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.03),
-    0 8px 25px rgba(0, 0, 0, 0.04);
+  background: var(--tm-surface);
+  border: var(--tm-border);
+  border-radius: var(--tm-radius-card);
+  box-shadow: var(--tm-shadow);
+  padding: var(--tm-pad-card);
 }
 
 .card-header {
   margin-bottom: 20px;
-  padding-bottom: 16px;
-
-  border-bottom: 1px solid #eef0f3;
 }
 
 .card-header h2 {
   margin: 0;
-  font-size: 18px;
-  color: #111827;
+  font-size: var(--tm-fs-h2);
+  font-weight: 800;
 }
 
 .card-header p {
-  margin: 5px 0 0;
-  color: #6b7280;
-  font-size: 13px;
+  margin: 6px 0 0;
+  color: var(--tm-ink-muted);
 }
 
-/* ACTIVE PROFILE */
+/* FORM ELEMENTS */
 
-.profile-banner {
-  background: #eef2ff;
-
-  border: 1px solid #dfe3ff;
-  border-radius: 16px;
-
-  padding: 22px 26px;
-
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.profile-label {
-  display: block;
-
-  margin-bottom: 5px;
-
-  color: #6366f1;
-  font-size: 12px;
-  font-weight: 700;
-
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.profile-banner h2 {
-  margin: 0;
-  color: #1f2937;
-}
-
-.profile-banner p {
-  margin: 5px 0 0;
-  color: #6b7280;
-}
-
-.profile-id {
-  background: white;
-
-  padding: 9px 14px;
-
-  border-radius: 8px;
-
-  color: #4f46e5;
-  font-weight: 600;
-}
-
-/* TWO COLUMN */
-
-.two-column {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 22px;
-}
-
-/* EMPTY USER */
-
-.empty-user {
-  text-align: center;
-
-  padding: 70px 20px;
-
-  border: 2px dashed #d1d5db;
-  border-radius: 16px;
-
-  background: white;
-}
-
-.empty-icon {
-  font-size: 40px;
-}
-
-.empty-user h2 {
-  margin-bottom: 8px;
-}
-
-.empty-user p {
-  max-width: 450px;
-  margin: auto;
-  color: #6b7280;
-}
-
-/* GLOBAL FORM ELEMENTS */
-
-input {
+input:not([type="radio"]):not([type="checkbox"]),
+select {
   width: 100%;
-
-  padding: 10px 12px;
-
-  border: 1px solid #d1d5db;
-  border-radius: 9px;
-
-  background: white;
-  color: #111827;
-
-  outline: none;
+  min-height: 48px;
+  padding: 0 14px;
+  border: var(--tm-border);
+  border-radius: var(--tm-radius-input);
+  background: #fff;
+  font-weight: 500;
 }
 
-input:focus {
-  border-color: #6366f1;
-
-  box-shadow:
-    0 0 0 3px rgba(99, 102, 241, 0.12);
+input:focus-visible,
+select:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--tm-primary);
+  outline-offset: 2px;
 }
 
+/* Default button: dark pill. Variants only change colours, so the .tm-btn
+   classes from tokens.css keep working on top of it. */
 button {
-  border: none;
-  border-radius: 9px;
-
-  padding: 10px 15px;
-
-  background: #4f46e5;
-  color: white;
-
-  font-weight: 600;
-
+  min-height: var(--tm-hit);
+  padding: 0 20px;
+  border: var(--tm-border);
+  border-radius: var(--tm-radius-pill);
+  background: var(--tm-ink);
+  color: var(--tm-ground);
+  font-weight: 700;
   cursor: pointer;
-
-  transition: 0.15s;
+  transition: transform 0.1s;
 }
 
-button:hover {
-  background: #4338ca;
+button:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
 }
 
 button.secondary {
-  background: #eef2ff;
-  color: #4338ca;
-}
-
-button.secondary:hover {
-  background: #e0e7ff;
+  background: transparent;
+  color: var(--tm-ink);
 }
 
 button.danger {
-  background: #fee2e2;
-  color: #b91c1c;
-}
-
-button.danger:hover {
-  background: #fecaca;
+  background: transparent;
+  border-color: var(--tm-danger);
+  color: var(--tm-danger);
 }
 
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
-
-.view {
-  display: grid;
-  gap: 22px;
-}
-
-/* NAVIGATION */
-
-.nav {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.nav a {
-  color: #d1d5db;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 14px;
-  padding: 8px 12px;
-  border-radius: 8px;
-}
-
-.nav a:hover {
-  background: #1f2937;
-  color: white;
-}
-
-.nav a.router-link-exact-active {
-  background: #312e81;
-  color: white;
-}
-
-.session {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #d1d5db;
-  font-size: 14px;
-}
-
-.role-badge {
-  display: inline-block;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  background: #e0e7ff;
-  color: #3730a3;
-}
-
-.role-badge.admin {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.role-badge.manager {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-/* SHARED FORM BITS */
 
 .field {
   display: flex;
@@ -443,16 +170,15 @@ button:disabled {
 }
 
 .field label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #6b7280;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 15px;
+  gap: var(--tm-gap);
+  margin-bottom: 18px;
 }
 
 .actions {
@@ -461,54 +187,95 @@ button:disabled {
   flex-wrap: wrap;
 }
 
+/* MESSAGES */
+
 .error-msg {
   margin: 0 0 14px;
-  padding: 10px 12px;
-  border-radius: 9px;
-  background: #fee2e2;
-  color: #991b1b;
+  color: var(--tm-danger);
   font-size: 14px;
+  font-weight: 600;
 }
 
 .success-msg {
   margin: 0 0 14px;
-  padding: 10px 12px;
-  border-radius: 9px;
-  background: #dcfce7;
-  color: #166534;
+  color: var(--tm-live-text);
   font-size: 14px;
+  font-weight: 600;
 }
 
-select {
-  padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 9px;
-  background: white;
-  color: #111827;
+.hint {
+  color: var(--tm-ink-muted);
 }
+
+/* ROLE BADGE (legacy class name, same look as .tm-role) */
+
+.role-badge {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: var(--tm-radius-pill);
+  font-size: var(--tm-fs-small);
+  font-weight: 700;
+  background: var(--tm-primary-soft);
+  color: var(--tm-primary-text);
+}
+
+.role-badge.manager {
+  background: var(--tm-accent-soft);
+  color: var(--tm-accent-text);
+}
+
+.role-badge.admin {
+  background: var(--tm-ink);
+  color: var(--tm-ground);
+}
+
+/* TABLES */
 
 table.data {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
 }
 
 table.data th,
 table.data td {
   text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid #eef0f3;
+  padding: 12px 8px;
+  border-bottom: 2px dashed var(--tm-divider);
   vertical-align: middle;
 }
 
 table.data th {
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .table-wrap {
   overflow-x: auto;
+}
+
+/* LOADING SKELETON */
+
+.skeleton {
+  background: var(--tm-sunken);
+  border-radius: var(--tm-radius-tile);
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+
+  button {
+    transition: none;
+  }
 }
 
 @media (max-width: 650px) {
@@ -517,26 +284,10 @@ table.data th {
   }
 }
 
-/* RESPONSIVE */
-
-@media (max-width: 800px) {
-  .topbar-content {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .user-selector {
-    min-width: 0;
-  }
-
-  .two-column {
-    grid-template-columns: 1fr;
-  }
-
-  .profile-banner {
-    align-items: flex-start;
-    gap: 20px;
-    flex-direction: column;
+/* Room for the fixed bottom tab bar */
+@media (max-width: 640px) {
+  .page {
+    padding-bottom: 110px;
   }
 }
 </style>

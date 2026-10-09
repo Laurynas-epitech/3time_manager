@@ -1,136 +1,53 @@
 <template>
-  <div class="view">
-    <!-- WHOSE DATA (only if there is more than one visible user) -->
+  <!-- "Today": your own card. Managers and admins see other people on /team. -->
+  <div
+    v-if="me"
+    class="view"
+  >
+    <!-- HERO + THIS WEEK -->
+    <div class="top-row">
+      <ClockManager
+        class="hero"
+        :user-id="me.id"
+        :user-name="me.username"
+        :team-names="teamNames"
+        :teams-loaded="teamsLoaded"
+        :working-times="workingTimes"
+        @status="clockStatus = $event"
+        @clock-changed="refresh"
+      />
+
+      <WeekCard
+        class="week"
+        :working-times="workingTimes"
+        :live-since="clockStatus.clockIn ? clockStatus.startDateTime : null"
+      />
+    </div>
+
+    <!-- DAILY / WEEKLY HOURS OVER A PERIOD -->
+    <HoursReport
+      ref="hoursReport"
+      :user-id="me.id"
+    />
+
+    <!-- PUNCHES (read-only here) -->
     <section
-      v-if="users.length > 1"
-      class="card picker"
+      class="punches-section"
+      aria-labelledby="punches-title"
     >
-      <div class="field">
-        <label for="user-pick">Viewing</label>
+      <h2
+        id="punches-title"
+        class="tm-h2"
+      >
+        Recent punches
+      </h2>
 
-        <select
-          id="user-pick"
-          v-model.number="selectedUserId"
-        >
-          <option
-            v-for="u in users"
-            :key="u.id"
-            :value="u.id"
-          >
-            {{ u.username }} ({{ u.email }}){{ u.id === me?.id ? " · you" : "" }}
-          </option>
-        </select>
-      </div>
-
-      <p class="hint">
-        {{
-          isAdmin
-            ? "As an admin you can see every user."
-            : "You can see the members of the teams you manage."
-        }}
-      </p>
+      <WorkingTimes
+        ref="workingTimes"
+        :user-id="me.id"
+        @loaded="workingTimes = $event"
+      />
     </section>
-
-    <template v-if="selectedUser">
-      <section class="profile-banner">
-        <div>
-          <span class="profile-label">
-            {{ isSelf ? "Your account" : "Selected employee" }}
-          </span>
-
-          <h2>{{ selectedUser.username }}</h2>
-
-          <p>{{ selectedUser.email }}</p>
-        </div>
-
-        <span
-          class="role-badge"
-          :class="selectedUser.role"
-        >
-          {{ selectedUser.role }}
-        </span>
-      </section>
-
-      <div class="two-column">
-        <!-- CLOCK -->
-        <section class="card">
-          <div class="card-header">
-            <div>
-              <h2>Clock</h2>
-              <p>Current attendance status.</p>
-            </div>
-          </div>
-
-          <ClockManager
-            :user-id="selectedUserId"
-            :can-clock="canClock"
-            @clock-changed="handleWorkingTimeSaved"
-          />
-        </section>
-
-        <!-- ADD / EDIT WORKING TIME (managers and admins) -->
-        <section class="card">
-          <div class="card-header">
-            <div>
-              <h2>
-                {{ selectedWorkingTime ? "Edit Working Time" : "Add Working Time" }}
-              </h2>
-
-              <p>
-                {{
-                  canEditWorkingTimes
-                    ? selectedWorkingTime
-                      ? "Update or delete the selected entry."
-                      : "Add a new working-time entry."
-                    : "Only managers and admins can edit working times."
-                }}
-              </p>
-            </div>
-          </div>
-
-          <WorkingTime
-            v-if="canEditWorkingTimes"
-            :user-id="selectedUserId"
-            :working-time="selectedWorkingTime"
-            @saved="handleWorkingTimeSaved"
-            @deleted="handleWorkingTimeSaved"
-            @cancel-edit="selectedWorkingTime = null"
-          />
-        </section>
-      </div>
-
-      <!-- HISTORY -->
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <h2>Working Time History</h2>
-            <p>All recorded working times for {{ selectedUser.username }}.</p>
-          </div>
-        </div>
-
-        <WorkingTimes
-          ref="workingTimes"
-          :user-id="selectedUserId"
-          :can-edit="canEditWorkingTimes"
-          @edit-working-time="selectedWorkingTime = $event"
-        />
-      </section>
-
-      <!-- CHARTS -->
-      <section class="card">
-        <div class="card-header">
-          <div>
-            <h2>Statistics</h2>
-            <p>Overview of recorded hours.</p>
-          </div>
-        </div>
-
-        <ChartManager
-          ref="chartManager"
-          :user-id="selectedUserId"
-        />
-      </section>
-    </template>
   </div>
 </template>
 
@@ -139,20 +56,22 @@ import api from "../api";
 import auth from "../auth";
 
 import WorkingTimes from "../components/WorkingTimes.vue";
-import WorkingTime from "../components/WorkingTime.vue";
 import ClockManager from "../components/ClockManager.vue";
-import ChartManager from "../components/ChartManager.vue";
+import HoursReport from "../components/HoursReport.vue";
+import WeekCard from "../components/WeekCard.vue";
 
 export default {
   name: "DashboardView",
 
-  components: { WorkingTimes, WorkingTime, ClockManager, ChartManager },
+  components: { WorkingTimes, ClockManager, HoursReport, WeekCard },
 
   data() {
     return {
-      users: [],
-      selectedUserId: auth.state.user?.id ?? null,
-      selectedWorkingTime: null,
+      teams: [],
+      teamsLoaded: false,
+      // Shared by the hero, the week card and the punch list
+      workingTimes: [],
+      clockStatus: { clockIn: false, startDateTime: null },
     };
   },
 
@@ -161,76 +80,60 @@ export default {
       return auth.state.user;
     },
 
-    isAdmin() {
-      return auth.hasRole("admin");
-    },
+    // Teams you manage or belong to (admins receive every team).
+    teamNames() {
+      const id = this.me?.id;
 
-    isSelf() {
-      return !!this.me && this.selectedUserId === this.me.id;
-    },
-
-    selectedUser() {
-      if (!this.me) return null;
-      if (this.isSelf) return this.me;
-      return this.users.find((u) => u.id === this.selectedUserId) || null;
-    },
-
-    // Mirrors the backend rules (TimeManagerWeb.Authorization).
-    canClock() {
-      return this.isAdmin || this.isSelf;
-    },
-
-    canEditWorkingTimes() {
-      return auth.hasRole("manager", "admin");
-    },
-  },
-
-  watch: {
-    selectedUserId() {
-      this.selectedWorkingTime = null;
+      return this.teams
+        .filter((team) => team.manager?.id === id || team.members.some((m) => m.id === id))
+        .map((team) => team.name);
     },
   },
 
   mounted() {
-    this.loadUsers();
+    this.loadTeams();
   },
 
   methods: {
-    async loadUsers() {
+    async loadTeams() {
       try {
-        const { data } = await api.get("/users");
-        this.users = data.data ?? [];
+        const { data } = await api.get("/teams");
+        this.teams = data.data ?? [];
       } catch (error) {
-        console.error("LOAD USERS ERROR:", error);
-        this.users = [];
+        console.error("LOAD TEAMS ERROR:", error);
+        this.teams = [];
+      } finally {
+        this.teamsLoaded = true;
       }
     },
 
-    async handleWorkingTimeSaved() {
-      this.selectedWorkingTime = null;
+    async refresh() {
       await this.$refs.workingTimes?.getWorkingTimes();
-      await this.$refs.chartManager?.getWorkingTimes();
+      await this.$refs.hoursReport?.load();
     },
   },
 };
 </script>
 
 <style scoped>
-.picker {
+.top-row {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 20px;
   flex-wrap: wrap;
+  gap: var(--tm-gap-section);
+  align-items: stretch;
 }
 
-.picker .field {
-  min-width: 320px;
+.hero {
+  flex: 1 1 340px;
 }
 
-.hint {
-  margin: 0;
-  color: #6b7280;
-  font-size: 13px;
+.week {
+  flex: 2 1 520px;
+}
+
+.punches-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-gap);
 }
 </style>

@@ -1,5 +1,16 @@
 <template>
   <div class="view">
+    <header class="page-title">
+      <h1 class="tm-h1">Teams</h1>
+      <p>
+        {{
+          isEmployee
+            ? "The teams you belong to. Only managers and admins can change them."
+            : "One manager per team. People can be on more than one."
+        }}
+      </p>
+    </header>
+
     <!-- CREATE TEAM (admin) -->
     <section
       v-if="isAdmin"
@@ -63,7 +74,13 @@
       v-if="teams.length === 0"
       class="card empty"
     >
-      {{ isAdmin ? "No teams yet." : "You don't manage or belong to any team yet. Ask an admin to assign you one." }}
+      {{
+        isAdmin
+          ? "No teams yet."
+          : isEmployee
+            ? "You're not in a team yet. An admin can add you."
+            : "You don't manage or belong to any team yet. Ask an admin to assign you one."
+      }}
     </section>
 
     <!-- TEAMS -->
@@ -120,7 +137,9 @@
               <th>Member</th>
               <th>Email</th>
               <th>Role</th>
-              <th></th>
+              <th v-if="canManage(team)">
+                <span class="tm-sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -128,7 +147,15 @@
               v-for="m in team.members"
               :key="m.id"
             >
-              <td>{{ m.username }}</td>
+              <td>
+                {{ m.username }}
+                <span
+                  v-if="m.id === me?.id"
+                  class="you"
+                >
+                  (you)
+                </span>
+              </td>
               <td>{{ m.email }}</td>
               <td>
                 <span
@@ -138,9 +165,8 @@
                   {{ m.role }}
                 </span>
               </td>
-              <td>
+              <td v-if="canManage(team)">
                 <button
-                  v-if="canManage(team)"
                   class="secondary"
                   @click="removeMember(team, m)"
                 >
@@ -213,6 +239,10 @@ export default {
       return auth.hasRole("admin");
     },
 
+    isEmployee() {
+      return auth.hasRole("employee");
+    },
+
     managerCandidates() {
       return this.directory.filter((u) => u.role === "manager" || u.role === "admin");
     },
@@ -227,12 +257,13 @@ export default {
       this.error = "";
 
       try {
+        // Employees only read their teams: no user directory needed.
         const [teams, users] = await Promise.all([
           api.get("/teams"),
-          api.get("/users", { params: { scope: "all" } }),
+          this.isEmployee ? null : api.get("/users", { params: { scope: "all" } }),
         ]);
         this.teams = teams.data.data;
-        this.directory = users.data.data;
+        this.directory = users?.data.data ?? [];
       } catch (error) {
         this.error = errorMessage(error, "Could not load teams.");
       }
@@ -329,7 +360,16 @@ export default {
   max-width: 420px;
 }
 
+.page-title p {
+  margin: 8px 0 0;
+  color: var(--tm-ink-muted);
+}
+
+.you {
+  color: var(--tm-ink-muted);
+}
+
 .empty {
-  color: #6b7280;
+  color: var(--tm-ink-muted);
 }
 </style>
