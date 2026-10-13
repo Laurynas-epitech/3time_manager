@@ -87,7 +87,7 @@
 
     <!-- TEAMS -->
     <section
-      v-for="team in teams"
+      v-for="team in visibleTeams"
       :key="team.id"
       class="card"
     >
@@ -184,6 +184,13 @@
         v-if="canManage(team)"
         class="add-member"
       >
+        <input
+          v-model.trim="memberSearch[team.id]"
+          type="search"
+          placeholder="Find member by name or email"
+          :aria-label="`Find member for ${team.name}`"
+          @input="toAdd[team.id] = undefined"
+        />
         <select
           v-model="toAdd[team.id]"
           :aria-label="`Add a member to ${team.name}`"
@@ -211,6 +218,11 @@
         </button>
       </div>
     </section>
+    <nav v-if="teamPageCount > 1" aria-label="Team pages" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+      <button :disabled="teamPage === 1" @click="teamPage--">Previous teams</button>
+      <span>Page {{ teamPage }} of {{ teamPageCount }} ({{ teams.length }} teams)</span>
+      <button :disabled="teamPage === teamPageCount" @click="teamPage++">Next teams</button>
+    </nav>
   </div>
 </template>
 
@@ -225,6 +237,8 @@ export default {
     return {
       teams: [],
       directory: [],
+      teamPage: 1,
+      memberSearch: {},
       newTeam: { name: "", manager_id: null },
       toAdd: {},
       error: "",
@@ -233,6 +247,8 @@ export default {
   },
 
   computed: {
+    teamPageCount() { return Math.max(1, Math.ceil(this.teams.length / 10)); },
+    visibleTeams() { return this.teams.slice((this.teamPage - 1) * 10, this.teamPage * 10); },
     me() {
       return auth.state.user;
     },
@@ -265,6 +281,7 @@ export default {
           this.isEmployee ? null : fetchAll("/users"),
         ]);
         this.teams = teams.data.data;
+        this.teamPage = Math.min(this.teamPage, this.teamPageCount);
         this.directory = users?.data.data ?? [];
       } catch (error) {
         this.error = errorMessage(error, "Could not load teams.");
@@ -278,7 +295,9 @@ export default {
 
     nonMembers(team) {
       const ids = new Set(team.members.map((m) => m.id));
-      return this.directory.filter((u) => !ids.has(u.id) && (this.isAdmin || u.id !== this.me.id));
+      const query = (this.memberSearch[team.id] || "").toLowerCase();
+      return this.directory.filter((u) => !ids.has(u.id) && (this.isAdmin || u.id !== this.me.id)
+        && `${u.username} ${u.email}`.toLowerCase().includes(query)).slice(0, 50);
     },
 
     replaceTeam(updated) {
@@ -319,6 +338,7 @@ export default {
       try {
         await api.delete(`/teams/${team.id}`);
         this.teams = this.teams.filter((t) => t.id !== team.id);
+        this.teamPage = Math.min(this.teamPage, this.teamPageCount);
       } catch (error) {
         this.error = errorMessage(error, "Could not delete the team.");
       }

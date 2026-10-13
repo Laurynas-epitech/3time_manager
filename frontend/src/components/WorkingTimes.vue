@@ -156,6 +156,19 @@
     >
       Show more
     </button>
+    <details v-if="!loading && !error && filtered.length" class="table-summary">
+      <summary>Working times table (UTC)</summary>
+      <div class="table-scroll">
+        <table><caption>Recorded working times · YYYY-MM-DD hh:mm:ss UTC</caption>
+          <thead><tr><th scope="col">Start</th><th scope="col">End</th><th scope="col">Hours</th><th scope="col">Status</th></tr></thead>
+          <tbody><tr v-for="entry in visible" :key="entry.id">
+            <td><time :datetime="entry.start">{{ toApiDateTime(new Date(entry.start)) }}</time></td>
+            <td><time :datetime="entry.end">{{ toApiDateTime(new Date(entry.end)) }}</time></td>
+            <td>{{ durationHours(entry).toFixed(2) }}</td><td>{{ entry.pending ? 'Pending sync' : 'Saved' }}</td>
+          </tr></tbody>
+        </table>
+      </div>
+    </details>
   </div>
 </template>
 
@@ -175,6 +188,7 @@ import {
   startOfDay,
   startOfWeek,
   toDateKey,
+  toApiDateTime,
 } from "../time";
 
 export default {
@@ -300,6 +314,7 @@ export default {
   methods: {
     durationHours,
     formatHours,
+    toApiDateTime,
     formatShortDate,
     formatTime,
 
@@ -345,6 +360,11 @@ export default {
 </script>
 
 <style scoped>
+.table-scroll { overflow-x: auto; }
+.table-summary { min-width: 0; }
+.table-summary table { width: 100%; white-space: nowrap; }
+.table-summary th, .table-summary td { padding: 8px; text-align: left; }
+.table-summary summary { cursor: pointer; min-height: 44px; }
 .punches {
   display: flex;
   flex-direction: column;

@@ -61,6 +61,10 @@
     >
       Ends the next day.
     </p>
+    <label class="tm-label" :for="`${uid}-end-day`">
+      End date (leave blank for same day or overnight)
+      <input :id="`${uid}-end-day`" v-model="endDay" class="tm-input" type="date" />
+    </label>
 
     <p
       v-if="error"
@@ -138,6 +142,7 @@ export default {
       day: toDateKey(new Date()),
       timeIn: "09:00",
       timeOut: "17:00",
+      endDay: "",
       error: "",
       saving: false,
     };
@@ -154,19 +159,19 @@ export default {
 
     // An "Out" earlier than "In" means the shift ended after midnight
     overnight() {
-      return !!this.timeIn && !!this.timeOut && this.timeOut <= this.timeIn;
+      return !this.endDay && !!this.timeIn && !!this.timeOut && this.timeOut < this.timeIn;
     },
 
     end() {
       if (!this.day || !this.timeOut) return null;
       const [h, m] = this.timeOut.split(":").map(Number);
-      const date = fromDateKey(this.day);
+      const date = fromDateKey(this.endDay || this.day);
       date.setHours(h, m, 0, 0);
       return this.overnight ? addDays(date, 1) : date;
     },
 
     duration() {
-      return this.start && this.end ? (this.end - this.start) / 3_600_000 : 0;
+      return this.start && this.end ? Math.max(0, (this.end - this.start) / 3_600_000) : 0;
     },
   },
 
@@ -184,6 +189,7 @@ export default {
         this.day = toDateKey(start);
         this.timeIn = `${pad(start.getHours())}:${pad(start.getMinutes())}`;
         this.timeOut = `${pad(end.getHours())}:${pad(end.getMinutes())}`;
+        this.endDay = toDateKey(end);
       },
     },
   },

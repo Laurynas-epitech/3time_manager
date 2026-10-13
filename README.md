@@ -72,7 +72,13 @@ login credentials are separate.
   [database operations](docs/operations/database.md),
   [HTTPS operations](docs/operations/https.md)
 
-Latest local checks, October 13, 2026: 42 backend tests, four pagination tests,
-production/PWA build, targeted security browser checks and offline regression passed.
-These results do not establish deployment of the latest fixes. CI tests/builds the
-project; automatic deployment is not implemented.
+Latest local checks, October 13, 2026: 61 backend tests, four pagination tests,
+three reporting tests, production/PWA build, required-route/chart browser checks,
+targeted security browser checks, migration checks and offline regression passed.
+Revision `87bc705` was subsequently deployed to OVH and passed targeted live checks;
+see the [deployment record](docs/validation/security-deployment-20261013.md).
+Main-only automatic deployment is prepared locally, with operational verification
+and credential provisioning outstanding. See the
+[requirement report](docs/validation/remediation-verification-20261013.md) and
+[deployment runbook](docs/operations/automatic-deployment.md). The new remediation
+has not been deployed.

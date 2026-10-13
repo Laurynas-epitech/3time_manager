@@ -25,6 +25,8 @@ by account but is not encrypted or resistant to local device tampering.
 - Username maximum 50 characters; team name maximum 100 characters.
 - Per-request list caps: users 500, teams 50, members 100, clocks/working times 2,000.
   Frontend pages retrieve complete histories/directories before replacing caches.
+- Follow-up local changes bound offsets to 1,000,000, render ten teams or 50 users
+  per page, and restrict searchable member pickers to 50 matching choices.
 - Large teams expose bounded previews and `members_has_more`. Authorized clients
   fetch subsequent members from `/api/teams/:id/members`.
 
@@ -59,8 +61,12 @@ reads, write limits, malformed bodies, stored SVG/script/HTML escaping, a SQL-st
 filter payload, CSRF/role rejection, sensitive-path 404s and offline account isolation.
 See [testing](testing.md) for commands and scope.
 
-The latest fixes are not deployed. Release checks must verify actual-client limiting,
-loopback access, HTTPS/cookie/header behavior, diagnostics and offline replay through
-the configured public proxy. Full pentest, controlled sustained resource testing,
-interception and real-device/shared-device assessment remain open. Targeted regression
-results do not establish a complete security audit.
+Revision `87bc705` was deployed October 13; targeted live proxy/authentication,
+headers, diagnostic denial and mobile offline checks passed. See the
+[deployment record](validation/security-deployment-20261013.md) for evidence and rollback.
+The [local follow-up assessment](validation/security-assessment-20261013.md) records
+52 backend tests, controlled resource measurements, HTTP/TLS observation and a
+confirmed copied-session replay after logout. These follow-up fixes are not deployed.
+New releases must repeat release checks. A full pentest, sustained/distributed resource
+testing and physical-device assessment remain open. Targeted results do not establish
+a complete security audit.

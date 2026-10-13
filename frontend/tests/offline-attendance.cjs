@@ -92,8 +92,10 @@ async function serverData(context, page, path) {
     await otherTab.getByRole('button', { name: /^Clock out$/i }).waitFor();
     await otherTab.getByRole('button', { name: /^Clock out$/i }).click();
     await page.getByRole('button', { name: /^Clock in$/i }).waitFor();
-    await otherTab.close();
     await waitQueue(page, 4);
+    // Wait for the durable write before closing its originating tab. The other
+    // page may still briefly show the previous "Clock in" label during refresh.
+    await otherTab.close();
     const saved = await queue(page);
     assert.deepEqual(saved.map(action => action.status), [true, false, true, false]);
     console.log('PASS: production app reopens offline; clock actions and history survive closing the tab.');

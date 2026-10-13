@@ -10,8 +10,14 @@ import ProfileView from "./views/ProfileView.vue";
 import TeamsView from "./views/TeamsView.vue";
 import MyTeamView from "./views/MyTeamView.vue";
 import AdminView from "./views/AdminView.vue";
+import AttendanceRouteView from "./views/AttendanceRouteView.vue";
 
 const routes = [
+  ...[
+    ['/workingTimes/:userid', 'times'], ['/workingTime/:userid', 'edit'],
+    ['/workingTime/:userid/:workingtimeid', 'edit'], ['/clock/:userid', 'clock'],
+    ['/chartManager/:userid', 'charts'],
+  ].map(([path, mode]) => ({ path, component: AttendanceRouteView, props: { mode }, meta: { requiresAuth: true } })),
   { path: "/login", name: "login", component: LoginView, meta: { guestOnly: true } },
   { path: "/register", name: "register", component: RegisterView, meta: { guestOnly: true } },
 

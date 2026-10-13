@@ -6,6 +6,10 @@ Start with the [project overview and local setup](../README.md).
 |---|---|
 | [Security](security.md) | Authentication, permissions, limits and release checks |
 | [Testing](testing.md) | Repeatable checks and dated verification results |
+| [October 13 requirements remediation](validation/remediation-verification-20261013.md) | All 155 supplied rows, fresh tests and unfinished scope |
+| [Automatic deployment preparation](operations/automatic-deployment.md) | Main release pipeline, provisioning and rollout verification |
+| [October 13 security deployment](validation/security-deployment-20261013.md) | Live verification, release location and rollback |
+| [October 13 local security assessment](validation/security-assessment-20261013.md) | Follow-up fixes, controlled test results and unresolved risks |
 | [Offline attendance](features/offline.md) | PWA behavior, storage, retries and limitations |
 | [Known limitations](limitations.md) | Remaining features and verification work |
 | [Authentication operations](operations/authentication.md) | Bootstrap, historical release and rollback |

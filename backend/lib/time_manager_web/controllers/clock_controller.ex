@@ -28,7 +28,7 @@ defmodule TimeManagerWeb.ClockController do
     end
   end
 
-  def create(conn, %{"userID" => user_id, "clock" => clock_params}) do
+  def create(conn, %{"userID" => user_id, "clock" => clock_params}) when is_map(clock_params) do
     with :ok <- authorize(Authorization.can_clock?(conn.assigns.current_user, user_id)),
          :ok <- authorize(matches_owner?(conn.assigns.current_user, clock_params)),
          {:ok, %Clock{} = clock} <- TimeTracking.record_clock(user_id, clock_params) do
@@ -37,6 +37,8 @@ defmodule TimeManagerWeb.ClockController do
       |> render(:show, clock: clock)
     end
   end
+
+  def create(_conn, _params), do: {:error, :bad_request}
 
   defp authorize(true), do: :ok
   defp authorize(_), do: {:error, :forbidden}

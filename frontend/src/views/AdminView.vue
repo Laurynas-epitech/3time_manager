@@ -100,7 +100,7 @@
 
           <tbody>
             <tr
-              v-for="u in users"
+              v-for="u in visibleUsers"
               :key="u.id"
             >
               <td>#{{ u.id }}</td>
@@ -136,6 +136,11 @@
         </table>
       </div>
     </section>
+    <nav v-if="userPageCount > 1" aria-label="User pages" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+      <button :disabled="userPage === 1" @click="userPage--">Previous users</button>
+      <span>Page {{ userPage }} of {{ userPageCount }} ({{ users.length }} users)</span>
+      <button :disabled="userPage === userPageCount" @click="userPage++">Next users</button>
+    </nav>
   </div>
 </template>
 
@@ -151,6 +156,7 @@ export default {
   data() {
     return {
       users: [],
+      userPage: 1,
       roles: [],
       form: emptyForm(),
       error: "",
@@ -159,6 +165,8 @@ export default {
   },
 
   computed: {
+    userPageCount() { return Math.max(1, Math.ceil(this.users.length / 50)); },
+    visibleUsers() { return this.users.slice((this.userPage - 1) * 50, this.userPage * 50); },
     me() {
       return auth.state.user;
     },
@@ -173,6 +181,7 @@ export default {
       try {
         const [users, roles] = await Promise.all([fetchAll("/users"), api.get("/roles")]);
         this.users = users.data.data;
+        this.userPage = Math.min(this.userPage, this.userPageCount);
         this.roles = roles.data.data;
       } catch (error) {
         this.error = errorMessage(error, "Could not load users.");
@@ -209,6 +218,7 @@ export default {
       try {
         await api.delete(`/users/${user.id}`);
         this.users = this.users.filter((u) => u.id !== user.id);
+        this.userPage = Math.min(this.userPage, this.userPageCount);
       } catch (error) {
         this.error = errorMessage(error, "Could not delete the user.");
       }

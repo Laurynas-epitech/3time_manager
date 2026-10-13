@@ -35,6 +35,9 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Test pagination and reporting
+        run: npm run test:security && npm run test:reporting
+
 
   backend:
     name: Backend tests
@@ -79,7 +82,7 @@ jobs:
         run: mix compile
 
       - name: Run tests
-        run: mix test
+        run: mix precommit
 
 
   docker:
@@ -88,6 +91,9 @@ jobs:
     needs:
       - frontend
       - backend
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
@@ -98,3 +104,50 @@ jobs:
 
       - name: Build backend Docker image
         run: docker build -t time-manager-backend ./backend
+
+      - name: Publish release images
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          image_root="ghcr.io/${GITHUB_REPOSITORY,,}"
+          printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          for service in frontend backend; do
+            docker tag "time-manager-$service" "$image_root-$service:$GITHUB_SHA"
+            docker push "$image_root-$service:$GITHUB_SHA"
+          done
+
+  deploy:
+    name: Roll out main after successful checks
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: docker
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+    concurrency:
+      group: production-deployment
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject stale release
+        run: test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$GITHUB_SHA"
+      - name: Prepare release bundle
+        run: git archive --format=tar.gz -o release.tar.gz HEAD
+      - name: Upload and deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_HOST" && test -n "$DEPLOY_USER" && test -n "$DEPLOY_KEY" && test -n "$KNOWN_HOSTS"
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          remote="$DEPLOY_USER@$DEPLOY_HOST"
+          target="/tmp/time-manager-$GITHUB_SHA.tar.gz"
+          scp -i ~/.ssh/deploy release.tar.gz "$remote:$target"
+          ssh -i ~/.ssh/deploy "$remote" "sudo /usr/local/sbin/time-manager-deploy '$target' '$GITHUB_SHA' 'ghcr.io/${GITHUB_REPOSITORY,,}'"

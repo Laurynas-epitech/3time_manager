@@ -140,6 +140,7 @@ export default {
       if (role === "admin") items.push({ to: "/admin", label: "People" });
 
       items.push({ to: "/profile", label: "Profile" });
+      items.push({ to: `/chartManager/${this.user.id}`, label: "Charts" });
       return items;
     },
 
@@ -328,6 +329,8 @@ export default {
     text-decoration: none;
     font-weight: 600;
     font-size: 14px;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .tab.active {

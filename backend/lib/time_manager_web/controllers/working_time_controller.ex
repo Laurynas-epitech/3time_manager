@@ -25,32 +25,36 @@ defmodule TimeManagerWeb.WorkingTimeController do
       from w in WorkingTime,
         where: w.user_id == ^user_id
 
-    query =
-      case params do
-        %{"start" => start_time, "end" => end_time} ->
-          with {:ok, start_dt} <- parse_datetime(start_time),
-               {:ok, end_dt} <- parse_datetime(end_time) do
-            from w in query,
-              where: w.start >= ^start_dt and w.end <= ^end_dt
-          else
-            _ -> query
-          end
+    with {:ok, query} <- filter_period(query, params) do
+      # Page from the newest working time, then return the page oldest first.
+      workingtime =
+        from(w in query, order_by: [desc: w.start, desc: w.id])
+        |> Pagination.paginate(params, @max_working_times)
+        |> Repo.all()
+        |> Enum.reverse()
 
-        _ ->
-          query
-      end
-
-    # Page from the newest working time, then return the page oldest first.
-    workingtime =
-      from(w in query, order_by: [desc: w.start, desc: w.id])
-      |> Pagination.paginate(params, @max_working_times)
-      |> Repo.all()
-      |> Enum.reverse()
-
-    render(conn, :index, workingtime: workingtime)
+      render(conn, :index, workingtime: workingtime)
+    end
   end
 
-  def create(conn, %{"userID" => user_id, "working_time" => working_time_params}) do
+  defp filter_period(query, %{"start" => start_time, "end" => end_time}) do
+    with {:ok, start_dt} <- parse_datetime(start_time),
+         {:ok, end_dt} <- parse_datetime(end_time),
+         true <- NaiveDateTime.compare(start_dt, end_dt) in [:lt, :eq] do
+      {:ok, from(w in query, where: w.start >= ^start_dt and w.end <= ^end_dt)}
+    else
+      _ -> {:error, :bad_request}
+    end
+  end
+
+  defp filter_period(query, params) do
+    if Map.has_key?(params, "start") or Map.has_key?(params, "end"),
+      do: {:error, :bad_request},
+      else: {:ok, query}
+  end
+
+  def create(conn, %{"userID" => user_id, "working_time" => working_time_params})
+      when is_map(working_time_params) do
     working_time_params =
       Map.put(working_time_params, "user_id", user_id)
 
@@ -64,6 +68,8 @@ defmodule TimeManagerWeb.WorkingTimeController do
     end
   end
 
+  def create(_conn, _params), do: {:error, :bad_request}
+
   def show(conn, %{"userID" => user_id, "id" => id}) do
     with :ok <- authorize(Authorization.can_view_user?(conn.assigns.current_user, user_id)) do
       working_time =
@@ -76,7 +82,8 @@ defmodule TimeManagerWeb.WorkingTimeController do
     end
   end
 
-  def update(conn, %{"id" => id, "working_time" => working_time_params}) do
+  def update(conn, %{"id" => id, "working_time" => working_time_params})
+      when is_map(working_time_params) do
     working_time = TimeTracking.get_working_time!(id)
     # The owner can't be changed through the body.
     working_time_params = Map.delete(working_time_params, "user_id")
@@ -87,6 +94,8 @@ defmodule TimeManagerWeb.WorkingTimeController do
       render(conn, :show, working_time: working_time)
     end
   end
+
+  def update(_conn, _params), do: {:error, :bad_request}
 
   def delete(conn, %{"id" => id}) do
     working_time = TimeTracking.get_working_time!(id)
@@ -105,9 +114,11 @@ defmodule TimeManagerWeb.WorkingTimeController do
   defp authorize(true), do: :ok
   defp authorize(_), do: {:error, :forbidden}
 
-  defp parse_datetime(value) do
+  defp parse_datetime(value) when is_binary(value) do
     value
     |> String.replace(" ", "T")
     |> NaiveDateTime.from_iso8601()
   end
+
+  defp parse_datetime(_), do: {:error, :invalid_datetime}
 end

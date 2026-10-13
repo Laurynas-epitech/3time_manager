@@ -9,7 +9,8 @@ defmodule TimeManager.Pagination do
 
   def paginate(query, params, cap) do
     limit = params |> int_param("limit", cap) |> min(cap) |> max(1)
-    offset = params |> int_param("offset", 0) |> max(0)
+    # Bound database work and avoid bigint overflow on hostile offset values.
+    offset = params |> int_param("offset", 0) |> max(0) |> min(1_000_000)
 
     from q in query, limit: ^limit, offset: ^offset
   end

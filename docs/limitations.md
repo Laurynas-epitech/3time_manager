@@ -10,7 +10,7 @@ Remaining implementation or verification work includes:
 - Offline datasets/mutations for profile, team and admin pages. Attendance is
   synchronized; other mutations require connectivity.
 - All-role/all-page mobile coverage and real-device testing.
-- Full security assessment and deployment verification of the latest fixes.
+- Full security assessment; targeted live verification of revision 87bc705 passed October 13.
   Copied-token revocation and shared-device/resource risks are in [security](security.md).
 - Host incident assessment, independent off-server automated backups and failure alerts.
 

@@ -1,368 +1,74 @@
 <template>
-  <div>
-    <div
-      v-if="workingTimes.length === 0"
-      class="empty-charts"
-    >
-      <strong>No chart data available.</strong>
-
-      <span>
-        Add working times for this user to display statistics.
-      </span>
-    </div>
-
-    <div v-else>
-      <div class="chart-summary">
-        <div class="stat">
-          <span>Total hours</span>
-
-          <strong>
-            {{ totalHours.toFixed(1) }}
-          </strong>
-        </div>
-
-        <div class="stat">
-          <span>Entries</span>
-
-          <strong>
-            {{ workingTimes.length }}
-          </strong>
-        </div>
-
-        <div class="stat">
-          <span>Average</span>
-
-          <strong>
-            {{ averageHours.toFixed(1) }} h
-          </strong>
-        </div>
+  <section class="card view">
+    <h2>Working hours charts</h2>
+    <p>Completed recorded hours · {{ timezone }}. Overlapping records are summed.</p>
+    <form class="filters" @submit.prevent="getWorkingTimes">
+      <label>From<input v-model="from" type="date" required /></label>
+      <label>Through<input v-model="to" type="date" required /></label>
+      <button :disabled="loading">Update charts</button>
+    </form>
+    <label for="chart-graph">Graph</label>
+    <select id="chart-graph" v-model="graph"><option value="all">All three</option><option value="bar">Daily bars</option><option value="line">Weekly line</option><option value="pie">Weekday pie</option></select>
+    <p v-if="error" role="alert">{{ error }}</p>
+    <p v-else-if="loading" role="status">Loading charts…</p>
+    <template v-else>
+      <p v-if="!total">No recorded hours in this period.</p>
+      <div v-if="total" class="charts">
+        <div v-if="graph === 'all' || graph === 'bar'" class="chart"><h3>Daily hours (h)</h3><Bar :data="dailyData" :options="options" aria-label="Daily hours; values in the table below" /></div>
+        <div v-if="graph === 'all' || graph === 'line'" class="chart"><h3>Weekly hours (h)</h3><Line :data="weeklyData" :options="options" aria-label="Weekly hours; values in the table below" /></div>
+        <div v-if="graph === 'all' || graph === 'pie'" class="chart"><h3>Hours by weekday (h)</h3><Pie :data="weekdayData" :options="pieOptions" aria-label="Weekday hours; values in the table below" /></div>
       </div>
-
-      <div class="charts-grid">
-        <div class="chart-box">
-          <h3>Hours Worked</h3>
-
-          <Bar
-            :data="chartData"
-            :options="chartOptions"
-          />
-        </div>
-
-        <div class="chart-box">
-          <h3>Working Time Trend</h3>
-
-          <Line
-            :data="chartData"
-            :options="chartOptions"
-          />
-        </div>
-
-        <div class="chart-box">
-          <h3>Hours Distribution</h3>
-
-          <Pie
-            :data="chartData"
-            :options="pieOptions"
-          />
-        </div>
+      <div v-for="[name, rows] in [['Daily', days], ['Weekly', weeks], ['Weekday', weekdays]]" :key="name" class="table-scroll">
+        <table><caption>{{ name }} recorded hours · total {{ total.toFixed(2) }} h</caption><thead><tr><th scope="col">Period</th><th scope="col">Hours</th></tr></thead><tbody><tr v-for="row in rows" :key="row.label"><th scope="row">{{ row.label }}</th><td>{{ row.hours.toFixed(2) }}</td></tr></tbody></table>
       </div>
-    </div>
-  </div>
+    </template>
+  </section>
 </template>
-
 <script>
-import { getAttendance, attendanceState } from "../services/attendance";
-import auth from "../auth";
-import { getDemoAttendance } from "../services/demoAttendance";
-
-import {
-  Chart as ChartJS,
-  Title,
-  Tooltip,
-  Legend,
-  BarElement,
-  LineElement,
-  PointElement,
-  ArcElement,
-  CategoryScale,
-  LinearScale,
-} from "chart.js";
-
-import {
-  Bar,
-  Line,
-  Pie,
-} from "vue-chartjs";
-
-ChartJS.register(
-  Title,
-  Tooltip,
-  Legend,
-  BarElement,
-  LineElement,
-  PointElement,
-  ArcElement,
-  CategoryScale,
-  LinearScale
-);
-
+import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, LineElement, PointElement, ArcElement, CategoryScale, LinearScale } from 'chart.js';
+import { Bar, Line, Pie } from 'vue-chartjs';
+import { getAttendance, attendanceState } from '../services/attendance';
+import auth from '../auth';
+import { getDemoAttendance } from '../services/demoAttendance';
+import { errorMessage } from '../api';
+import { toDateKey, startOfWeek } from '../time';
+import { reportBuckets } from '../services/reporting';
+ChartJS.register(Title, Tooltip, Legend, BarElement, LineElement, PointElement, ArcElement, CategoryScale, LinearScale);
+const colors = ['#4f46e5', '#0f766e', '#c2410c', '#a21caf', '#0369a1', '#a16207', '#be123c'];
+const dataset = (rows) => ({ labels: rows.map(row => row.label), datasets: [{ label: 'Recorded hours (h)', data: rows.map(row => row.hours), backgroundColor: colors, borderColor: '#4f46e5', borderWidth: 2 }] });
 export default {
-  name: "ChartManager",
-
-  components: {
-    Bar,
-    Line,
-    Pie,
-  },
-
-  props: {
-    userId: {
-      type: Number,
-      required: true,
-    },
-  },
-
-  data() {
-    return {
-      workingTimes: [],
-    };
-  },
-
-  watch: {
-    attendanceRevision() { if (!auth.isDemo()) this.getWorkingTimes(false); },
-    userId: {
-      immediate: true,
-
-      handler() {
-        this.getWorkingTimes();
-      },
-    },
-  },
-
+  components: { Bar, Line, Pie },
+  props: { userId: { type: Number, required: true } },
+  data() { return { from: toDateKey(startOfWeek(new Date())), to: toDateKey(new Date()), graph: 'all', workingTimes: [], loading: false, error: '', request: 0, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }; },
   computed: {
-    attendanceRevision() { return attendanceState.revision; },
-    hours() {
-      return this.workingTimes.map(
-        (workingTime) => {
-          const start =
-            new Date(
-              workingTime.start
-            );
-
-          const end =
-            new Date(
-              workingTime.end
-            );
-
-          return (
-            (end - start) /
-            (1000 * 60 * 60)
-          );
-        }
-      );
-    },
-
-    totalHours() {
-      return this.hours.reduce(
-        (total, hours) =>
-          total + hours,
-        0
-      );
-    },
-
-    averageHours() {
-      if (this.hours.length === 0) {
-        return 0;
-      }
-
-      return (
-        this.totalHours /
-        this.hours.length
-      );
-    },
-
-    chartData() {
-      return {
-        labels:
-          this.workingTimes.map(
-            (workingTime) =>
-              new Date(
-                workingTime.start
-              ).toLocaleDateString(
-                undefined,
-                {
-                  day: "2-digit",
-                  month: "short",
-                }
-              )
-          ),
-
-        datasets: [
-          {
-            label: "Hours Worked",
-            data: this.hours,
-
-            backgroundColor:
-              "rgba(79, 70, 229, 0.55)",
-
-            borderColor:
-              "rgb(79, 70, 229)",
-
-            borderWidth: 2,
-
-            tension: 0.3,
-          },
-        ],
-      };
-    },
-
-    chartOptions() {
-      return {
-        responsive: true,
-        maintainAspectRatio: false,
-
-        plugins: {
-          legend: {
-            display: false,
-          },
-        },
-
-        scales: {
-          y: {
-            beginAtZero: true,
-          },
-        },
-      };
-    },
-
-    pieOptions() {
-      return {
-        responsive: true,
-        maintainAspectRatio: false,
-      };
-    },
+    revision() { return attendanceState.revision; },
+    buckets() { try { return reportBuckets(this.workingTimes, this.from, this.to); } catch { return { daily: [], weekly: [], weekday: [] }; } },
+    days() { return this.buckets.daily; }, weeks() { return this.buckets.weekly; }, weekdays() { return this.buckets.weekday; },
+    total() { return this.days.reduce((sum, row) => sum + row.hours, 0); },
+    dailyData() { return dataset(this.days); }, weeklyData() { return dataset(this.weeks); }, weekdayData() { return dataset(this.weekdays); },
+    options() { return { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: 'Hours' } } }, plugins: { legend: { display: false } } }; },
+    pieOptions() { return { responsive: true, maintainAspectRatio: false }; },
   },
-
+  watch: { userId: { immediate: true, handler() { this.getWorkingTimes(); } }, revision() { this.getWorkingTimes(false); } },
   methods: {
-  async getWorkingTimes(refresh = true) {
-    if (!this.userId) {
-      this.workingTimes = [];
-      return;
-    }
-
-    try {
-      if (auth.isDemo()) {
-        this.workingTimes = (await getDemoAttendance(this.userId)).workingTimes;
-        return;
-      }
-      this.workingTimes = (await getAttendance(this.userId, { refresh })).workingTimes;
-    } catch (error) {
-      console.error(
-        "CHART ERROR:",
-        error
-      );
-
-      this.workingTimes = [];
-    }
+    async getWorkingTimes(refresh = true) {
+      const request = ++this.request;
+      this.workingTimes = []; this.error = '';
+      try { reportBuckets([], this.from, this.to); }
+      catch (error) { this.error = error.message; this.loading = false; return; }
+      this.loading = true;
+      try {
+        const attendance = auth.isDemo() ? await getDemoAttendance(this.userId) : await getAttendance(this.userId, { refresh: refresh !== false });
+        if (request === this.request) this.workingTimes = attendance.workingTimes;
+      } catch (error) { if (request === this.request) this.error = errorMessage(error, 'Could not load charts.'); }
+      finally { if (request === this.request) this.loading = false; }
+    },
   },
-},
 };
 </script>
-
 <style scoped>
-.chart-summary {
-  display: grid;
-  grid-template-columns:
-    repeat(3, 1fr);
-
-  gap: 15px;
-
-  margin-bottom: 25px;
-}
-
-.stat {
-  padding: 18px;
-
-  background: #f8fafc;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.stat span {
-  color: #6b7280;
-  font-size: 12px;
-}
-
-.stat strong {
-  color: #111827;
-  font-size: 24px;
-}
-
-.charts-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-
-  gap: 20px;
-}
-
-.chart-box {
-  height: 340px;
-
-  padding: 18px;
-
-  background: #fafafa;
-
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-}
-
-.chart-box:last-child {
-  grid-column: span 2;
-
-  max-width: 600px;
-  width: 100%;
-
-  justify-self: center;
-}
-
-.chart-box h3 {
-  margin: 0 0 15px;
-
-  color: #374151;
-  font-size: 14px;
-}
-
-.empty-charts {
-  padding: 50px 20px;
-
-  text-align: center;
-
-  border: 1px dashed #d1d5db;
-  border-radius: 12px;
-
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-
-  color: #6b7280;
-}
-
-@media (max-width: 750px) {
-  .chart-summary {
-    grid-template-columns: 1fr;
-  }
-
-  .charts-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .chart-box:last-child {
-    grid-column: span 1;
-  }
-}
+.filters { display:flex; flex-wrap:wrap; gap:16px; align-items:end; } .filters label { flex:1 1 160px; }
+.charts { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr)); gap:24px; }
+.chart { height:320px; padding-bottom:48px; min-width:0; } .table-scroll { overflow:auto; }
+table { width:100%; } caption { text-align:left; font-weight:700; } th,td { padding:8px; text-align:left; }
 </style>

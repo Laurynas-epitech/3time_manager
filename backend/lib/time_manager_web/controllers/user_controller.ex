@@ -29,7 +29,7 @@ defmodule TimeManagerWeb.UserController do
   end
 
   # Admin only (see router): create a user with any role.
-  def create(conn, %{"user" => user_params}) do
+  def create(conn, %{"user" => user_params}) when is_map(user_params) do
     role = user_params["role"] || "employee"
 
     with {:ok, %User{} = user} <- Accounts.create_user(user_params, role) do
@@ -40,19 +40,23 @@ defmodule TimeManagerWeb.UserController do
     end
   end
 
+  def create(_conn, _params), do: {:error, :bad_request}
+
   def show(conn, %{"id" => id}) do
     with :ok <- authorize(Authorization.can_view_user?(conn.assigns.current_user, id)) do
       render(conn, :show, user: Accounts.get_user!(id))
     end
   end
 
-  def update(conn, %{"id" => id, "user" => user_params}) do
+  def update(conn, %{"id" => id, "user" => user_params}) when is_map(user_params) do
     with :ok <- authorize(Authorization.can_edit_user?(conn.assigns.current_user, id)),
          user = Accounts.get_user!(id),
          {:ok, %User{} = user} <- Accounts.update_user(user, user_params) do
       render(conn, :show, user: user)
     end
   end
+
+  def update(_conn, _params), do: {:error, :bad_request}
 
   def delete(conn, %{"id" => id}) do
     with :ok <- authorize(Authorization.can_edit_user?(conn.assigns.current_user, id)),
@@ -63,7 +67,7 @@ defmodule TimeManagerWeb.UserController do
   end
 
   # Admin only (see router): promote / demote. Body: {"role": "manager"}
-  def update_role(conn, %{"id" => id, "role" => role}) do
+  def update_role(conn, %{"id" => id, "role" => role}) when is_binary(role) do
     current = conn.assigns.current_user
     user = Accounts.get_user!(id)
 

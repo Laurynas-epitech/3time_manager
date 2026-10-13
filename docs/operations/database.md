@@ -3,8 +3,8 @@
 The OVH application now uses a clean PostgreSQL 16 cluster. Deploy with:
 
 ```sh
-cd /home/ubuntu/3time_manager
-sudo docker compose -f docker-compose.secure.yml -f docker-compose.https.yml up -d --build
+cd /home/ubuntu/time-manager-releases/security-87bc705
+sudo docker compose -p 3time_manager --env-file .env -f docker-compose.secure.yml -f docker-compose.https.yml up -d --no-deps --build backend frontend
 ```
 
 Do not use the development Compose file on OVH: it uses demonstration database credentials instead of the secured application role. Do not use `--remove-orphans`, `down -v`, or volume removal commands. The stopped `time_manager_db` container and `3time_manager_postgres_data` volume are incident evidence; never restart or write to them during normal deployment.
@@ -35,7 +35,7 @@ Authentication/authorization and scheduled, tested backups were subsequently imp
 
 ## Automated daily backups
 
-Installed on OVH: `/usr/local/sbin/time-manager-backup`, `time-manager-backup.service`, and `time-manager-backup.timer`. Source definitions are tracked under `ops/` (currently uncommitted).
+Installed on OVH: `/usr/local/sbin/time-manager-backup`, `time-manager-backup.service`, and `time-manager-backup.timer`. Source definitions are tracked under `ops/`.
 
 Schedule: daily at 03:00 Europe/Paris (DST aware). Persistent timer runs a missed backup after the server comes back online. Keeps the latest 30 successful custom-format PostgreSQL dumps and SHA-256 checksum files in `/var/backups/time-manager-daily/`. Directory 700; files 600. Retention affects only this dedicated daily directory and precisely named daily backup files; incident archives are excluded. Failed dumps are never retained as successful backups; previous completed backups remain available. Successful jobs log the filename and size, not database contents or passwords. Failures appear in the systemd journal; external failure alerts are not configured.
 

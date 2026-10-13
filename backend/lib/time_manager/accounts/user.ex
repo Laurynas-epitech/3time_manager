@@ -50,7 +50,7 @@ defmodule TimeManager.Accounts.User do
 
   defp validate_email(changeset) do
     changeset
-    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must be a valid email")
+    |> validate_format(:email, ~r/^[^\s@]+@[^\s@]+$/, message: "must be a valid email")
     |> validate_length(:email, max: 160)
     |> unique_constraint(:email)
   end

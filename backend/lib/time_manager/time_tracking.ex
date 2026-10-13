@@ -181,7 +181,7 @@ defmodule TimeManager.TimeTracking do
 
     if not clock.status do
       %WorkingTime{user_id: user.id}
-      |> WorkingTime.changeset(%{start: latest.time, end: clock.time})
+      |> WorkingTime.changeset(%{start: latest.time, end: clock.time}, allow_zero: true)
       |> Repo.insert()
       |> case do
         {:ok, _working_time} -> :ok

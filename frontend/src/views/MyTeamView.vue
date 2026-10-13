@@ -38,6 +38,7 @@
       </header>
 
       <!-- PEOPLE -->
+      <TeamReport v-if="group.id !== 'everyone'" :team-id="group.id" />
       <div
         class="people"
         role="group"
@@ -130,6 +131,7 @@
         </section>
 
         <!-- DAILY / WEEKLY HOURS OVER A PERIOD -->
+        <router-link :to="`/chartManager/${selected.id}`">View {{ selected.username }}'s charts</router-link>
         <HoursReport
           ref="hoursReport"
           :user-id="selected.id"
@@ -145,6 +147,7 @@ import api, { errorMessage, fetchAll, fetchTeams } from "../api";
 import auth from "../auth";
 import { getAttendance } from "../services/attendance";
 import HoursReport from "../components/HoursReport.vue";
+import TeamReport from "../components/TeamReport.vue";
 import PersonCard from "../components/PersonCard.vue";
 import RangeChips from "../components/RangeChips.vue";
 import WeekCard from "../components/WeekCard.vue";
@@ -158,7 +161,7 @@ const STATUS_REFRESH_MS = 60_000;
 export default {
   name: "MyTeamView",
 
-  components: { HoursReport, PersonCard, RangeChips, WeekCard, WorkingTime, WorkingTimes },
+  components: { TeamReport, HoursReport, PersonCard, RangeChips, WeekCard, WorkingTime, WorkingTimes },
 
   data() {
     return {

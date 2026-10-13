@@ -42,8 +42,17 @@ defmodule TimeManagerWeb.TeamController do
     end
   end
 
+  def report(conn, %{"id" => id} = params) do
+    team = Teams.get_team!(id)
+
+    with :ok <- authorize(Authorization.can_manage_team?(conn.assigns.current_user, team)),
+         {:ok, report} <- TimeManager.TeamReport.build(team.id, params) do
+      json(conn, %{data: report})
+    end
+  end
+
   # Admin only (see router)
-  def create(conn, %{"team" => team_params}) do
+  def create(conn, %{"team" => team_params}) when is_map(team_params) do
     with :ok <- validate_manager(team_params),
          {:ok, team} <- Teams.create_team(team_params) do
       conn
@@ -52,8 +61,10 @@ defmodule TimeManagerWeb.TeamController do
     end
   end
 
+  def create(_conn, _params), do: {:error, :bad_request}
+
   # Admin only (see router)
-  def update(conn, %{"id" => id, "team" => team_params}) do
+  def update(conn, %{"id" => id, "team" => team_params}) when is_map(team_params) do
     team = Teams.get_team!(id)
 
     with :ok <- validate_manager(team_params),
@@ -61,6 +72,8 @@ defmodule TimeManagerWeb.TeamController do
       render(conn, :show, team: team)
     end
   end
+
+  def update(_conn, _params), do: {:error, :bad_request}
 
   # Admin only (see router)
   def delete(conn, %{"id" => id}) do

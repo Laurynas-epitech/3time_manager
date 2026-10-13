@@ -50,6 +50,8 @@ defmodule TimeManager.Accounts do
 
   def get_user!(id), do: User |> Repo.get!(id) |> Repo.preload(:role)
 
+  def get_user(nil), do: nil
+
   def get_user(id) do
     case Repo.get(User, id) do
       nil -> nil

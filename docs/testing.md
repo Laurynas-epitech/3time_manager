@@ -81,3 +81,9 @@ precede the documentation organization, which changes no application behavior.
 GitHub CI runs frontend build, backend tests and Docker image builds for main pushes
 and pull requests to main. These local results do not establish fresh CI, deployment,
 comprehensive pentest/load assessment or real-device usability.
+
+The later [local security assessment](validation/security-assessment-20261013.md)
+passed 52 backend tests, four pagination tests and a fresh production/PWA build.
+It documents disposable fixtures, browser scripts, resource measurements, transport
+observations and the unresolved copied-session replay. These are local follow-up
+results, separate from deployed revision `87bc705` and the earlier 42-test run.
