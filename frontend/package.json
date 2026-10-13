@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test:offline": "node tests/offline-attendance.cjs",
     "test:security": "node --test tests/pagination.test.js",
-    "test:reporting": "node --test tests/reporting.test.js"
+    "test:reporting": "node --test tests/reporting.test.js",
+    "test:team-status": "node tests/team-status-browser.cjs"
   },
   "dependencies": {
     "axios": "^1.20.0",

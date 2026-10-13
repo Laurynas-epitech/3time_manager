@@ -38,6 +38,21 @@ jobs:
       - name: Test pagination and reporting
         run: npm run test:security && npm run test:reporting
 
+      - name: Install browser for attendance status regression
+        run: npx playwright install --with-deps chromium
+
+      - name: Test team status failures and recovery
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 5173 > /tmp/time-manager-preview.log 2>&1 &
+          preview_pid=$!
+          trap 'kill "$preview_pid"' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:5173/ > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:5173/ > /dev/null
+          npm run test:team-status
+
 
   backend:
     name: Backend tests

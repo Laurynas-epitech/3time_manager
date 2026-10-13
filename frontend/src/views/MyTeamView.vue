@@ -34,7 +34,10 @@
       <!-- TITLE -->
       <header class="team-title">
         <h1 class="tm-h1">{{ group.name }}</h1>
-        <p>{{ onClockSummary }}</p>
+        <p role="status">{{ onClockSummary }}</p>
+        <button type="button" class="tm-btn" :disabled="statusesLoading" @click="loadStatuses">
+          {{ statusesLoading ? 'Checking attendance…' : 'Refresh attendance status' }}
+        </button>
       </header>
 
       <!-- PEOPLE -->
@@ -54,6 +57,7 @@
           :in-since="statusOf(person.id).since"
           :last-out="statusOf(person.id).lastOut"
           :today-hours="statusOf(person.id).todayHours"
+          :attendance-status="statusOf(person.id).state"
           @select="selectPerson(person.id)"
         />
 
@@ -74,9 +78,13 @@
       </div>
 
       <template v-if="selected">
+        <p v-if="selectedStatus.state === 'unavailable'" class="error-msg" role="alert">
+          Status unavailable for {{ selected.username }}. Refresh attendance status to try again.
+        </p>
         <!-- WEEK + ADD A PUNCH -->
         <div class="top-row">
           <WeekCard
+            v-if="selectedStatus.state === 'available'"
             class="week"
             :title="selected.id === me.id ? 'Your week' : `${selected.username}'s week`"
             :subtitle="`${selected.email} · ${selected.role}`"
@@ -173,6 +181,8 @@ export default {
       selectedId: null,
       // { [userId]: { clockIn, since, lastOut, todayHours } }
       statuses: {},
+      statusesLoading: false,
+      statusRequest: 0,
       workingTimes: [],
       now: Date.now(),
       ticker: null,
@@ -225,9 +235,20 @@ export default {
 
     onClockSummary() {
       const total = this.people.length;
-      const inNow = this.people.filter((person) => this.statusOf(person.id).clockIn).length;
+      const statuses = this.people.map((person) => this.statusOf(person.id));
+      const known = statuses.filter((status) => status.state === "available");
+      const inNow = known.filter((status) => status.clockIn).length;
+      const unavailable = statuses.filter((status) => status.state === "unavailable").length;
+      const loading = statuses.filter((status) => status.state === "loading").length;
 
       if (total === 0) return "No one here yet";
+      if (unavailable || loading) {
+        const parts = [];
+        if (known.length) parts.push(`${inNow} confirmed on the clock`);
+        if (unavailable) parts.push(`Status unavailable for ${unavailable} ${unavailable === 1 ? "person" : "people"}`);
+        if (loading) parts.push(`Checking status for ${loading} ${loading === 1 ? "person" : "people"}`);
+        return parts.join(" · ");
+      }
       if (inNow === 0) return "nobody on the clock right now";
       return `${inNow} of ${total} on the clock right now`;
     },
@@ -248,13 +269,14 @@ export default {
   },
 
   beforeUnmount() {
+    this.statusRequest++;
     clearInterval(this.ticker);
     clearInterval(this.poller);
   },
 
   methods: {
     statusOf(id) {
-      return this.statuses[id] || { clockIn: false, since: null, lastOut: null, todayHours: 0 };
+      return this.statuses[id] || { state: "loading", clockIn: false, since: null, lastOut: null, todayHours: null };
     },
 
     async load() {
@@ -308,10 +330,17 @@ export default {
 
     // Clock state and today's hours for every person card (and you).
     async loadStatuses() {
-      const ids = [...this.people.map((p) => p.id), this.me.id];
+      const request = ++this.statusRequest;
+      const ownerId = this.me.id;
+      const ids = [...new Set([...this.people.map((p) => p.id), ownerId])];
+      this.statusesLoading = true;
+      this.statuses = Object.fromEntries(ids.map((id) => [id, { state: "loading", clockIn: false, since: null, lastOut: null, todayHours: null }]));
       const results = await Promise.all(ids.map((id) => this.fetchStatus(id)));
 
-      this.statuses = Object.fromEntries(ids.map((id, i) => [id, results[i]]));
+      if (request === this.statusRequest && this.me?.id === ownerId) {
+        this.statuses = Object.fromEntries(ids.map((id, i) => [id, results[i]]));
+        this.statusesLoading = false;
+      }
     },
 
     async fetchStatus(id) {
@@ -328,21 +357,28 @@ export default {
         const endsToday = completed.map((w) => new Date(w.end)).filter((d) => toDateKey(d) === todayKey);
 
         return {
+          state: "available",
           clockIn,
           since,
           lastOut: !clockIn && endsToday.length ? new Date(Math.max(...endsToday)) : null,
           todayHours: hoursByDay(all, today, tomorrow)[todayKey] ?? 0,
         };
       } catch {
-        return { clockIn: false, since: null, lastOut: null, todayHours: 0 };
+        return { state: "unavailable", clockIn: false, since: null, lastOut: null, todayHours: null };
       }
     },
 
     // After adding / editing a punch for the selected person
     async refreshSelected(reloadList = true) {
+      const id = this.selectedId;
+      const ownerId = this.me.id;
+      const request = this.statusRequest;
       if (reloadList) await this.$refs.workingTimes?.getWorkingTimes();
       this.$refs.hoursReport?.load();
-      this.statuses = { ...this.statuses, [this.selectedId]: await this.fetchStatus(this.selectedId) };
+      const status = await this.fetchStatus(id);
+      if (request === this.statusRequest && this.selectedId === id && this.me?.id === ownerId) {
+        this.statuses = { ...this.statuses, [id]: status };
+      }
     },
   },
 };

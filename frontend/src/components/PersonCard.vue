@@ -25,9 +25,10 @@
       <span
         v-else
         class="status"
-        :class="{ live: clockedIn }"
+        :class="{ live: attendanceStatus === 'available' && clockedIn }"
       >
         <span
+          v-if="attendanceStatus === 'available'"
           class="dot"
           aria-hidden="true"
         ></span>
@@ -38,9 +39,9 @@
     <span
       v-if="!self"
       class="today tm-num"
-      :aria-label="`${formatHours(todayHours)} today`"
+      :aria-label="attendanceStatus === 'available' ? `${formatHours(todayHours)} today` : `Today's hours ${attendanceStatus === 'loading' ? 'loading' : 'unavailable'}`"
     >
-      {{ formatClockHours(todayHours) }}
+      {{ attendanceStatus === 'available' ? formatClockHours(todayHours) : '—' }}
     </span>
   </button>
 </template>
@@ -52,6 +53,11 @@ export default {
   name: "PersonCard",
 
   props: {
+    attendanceStatus: {
+      type: String,
+      default: "available",
+      validator: (value) => ["loading", "available", "unavailable"].includes(value),
+    },
     name: {
       type: String,
       required: true,
@@ -98,6 +104,8 @@ export default {
 
   computed: {
     statusText() {
+      if (this.attendanceStatus === "loading") return "Loading status…";
+      if (this.attendanceStatus === "unavailable") return "Status unavailable";
       if (this.clockedIn) return `in since ${formatTime(this.inSince)}`;
       if (this.lastOut) return `out since ${formatTime(this.lastOut)}`;
       return "not in today";
