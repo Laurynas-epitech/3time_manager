@@ -27,6 +27,7 @@ Deferred work keeps its actual status and explicitly says **DEFERRED** in its no
 
 | Date | Work completed | Verification / remaining work |
 |---|---|---|
+| October 13, 2026 | Owner requested a direct push to GitHub main. | Fast-forwarded origin/main 4168804 to the integration branch (ecfc9ed offline/HTTPS integration, 07827ac, 8621940 Theme 07 fixes, plus this record); no force push. Not deployed to OVH. No checklist status or totals changed. |
 | October 13, 2026 | Owner reversed the October 12 local-only decision and requested a GitHub push of the Theme 07 security fixes (E8). | Committed and pushed to origin/integration/offline-dashboard-20261009; GitHub main unchanged; not deployed to OVH and the ops Nginx header change is still not applied there. No checklist status or totals changed. |
 | October 12, 2026 | Drafted the 13-slide English presentation deck (10-15 min, three presenters, app's Punch Card style) as a private claude.ai artifact: https://claude.ai/artifact/HRNCdTs6wPny7xyTnEZbFD | Presenter names, demo environment and backup-video link are placeholders. Deliverable only; no checklist status or totals changed. |
 | October 12, 2026 | Owner decided the October 12 security fixes stay local only (no commit/push/deploy for now) and started planning the project presentation. | Planning only; no checklist status or totals changed. |
