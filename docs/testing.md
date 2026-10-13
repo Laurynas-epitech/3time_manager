@@ -87,3 +87,10 @@ passed 52 backend tests, four pagination tests and a fresh production/PWA build.
 It documents disposable fixtures, browser scripts, resource measurements, transport
 observations and the unresolved copied-session replay. These are local follow-up
 results, separate from deployed revision `87bc705` and the earlier 42-test run.
+
+Subsequent [authorized automatic release](validation/automatic-deployment-20261013.md)
+at `215e8f8` passed actual main CI, image publication/rollout and independent live
+reports/charts/routes/HTTPS/offline replay. A disposable restore verified all original
+rows unchanged, preserved secure container/volume and deployed NOT NULL constraints.
+Intentional failed-health rollback remains untested; full accessibility/whole-app
+offline/broader security boundaries are not promoted to PASS by a successful rollout.

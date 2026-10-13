@@ -1,4 +1,4 @@
-# Automatic deployment preparation — October 13, 2026
+# Automatic deployment — October 13, 2026
 
 The existing workflow establishes `main` as the push/PR branch. This change retains
 that policy: PRs validate only; a successful main push builds and publishes
@@ -6,11 +6,13 @@ SHA-tagged frontend/backend images to GHCR, then invokes the installed server
 rollout command. Production deployments are serialized; stale main revisions are
 rejected before uploading. No integration branch is automatically released.
 
-This is **prepared locally, not an operationally verified deployment pipeline**.
-No secrets, environment rules, registry visibility, SSH permissions or server
-configuration were changed in this session. No push or external deployment occurred.
+The owner subsequently authorized provisioning and rollout. The main workflow
+successfully published/deployed `215e8f8`; independent live checks, original-data
+comparison and a disposable backup restore passed. See the
+[release record](../validation/automatic-deployment-20261013.md). The original
+preparation/provisioning instructions below remain the operating contract.
 
-Before activation, the owner must authorize the rollout and provision:
+Provisioning requirements for a new host or replacement credentials:
 
 - Repository/environment secrets `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`
   and pinned `DEPLOY_KNOWN_HOSTS`. Protect main and the production environment.
@@ -54,9 +56,9 @@ constraint and all foreign keys/cascade behavior remain. Overlaps and legacy
 zero-duration clock sessions are retained. Manual writes require end > start;
 same-second automatic clock pairs deliberately allow zero elapsed time.
 
-Local evidence establishes migration upgrade/preflight/rollback and syntax, not
-successful server rollout, backup restore, health-failure recovery, registry
-publication or actual CI behavior. Those checks remain required before marking CD
-verified. The smoke performs clock reads; offline punch/replay regression must also
-be run after an authorized release. Its credential fixture and deployment behavior
-were not exercised against production here.
+The October 13 release establishes actual CI, image publication, successful rollout,
+backup restore, live reporting and offline replay. An intentional failed-health
+application rollback remains untested. The automatic smoke performs clock reads;
+the separate live offline regression also verified punch/replay after this release.
+The existing ubuntu identity is in use; a dedicated restricted identity is still a
+future operational improvement.

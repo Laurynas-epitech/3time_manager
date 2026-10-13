@@ -3,8 +3,8 @@
 The OVH application now uses a clean PostgreSQL 16 cluster. Deploy with:
 
 ```sh
-cd /home/ubuntu/time-manager-releases/security-87bc705
-sudo docker compose -p 3time_manager --env-file .env -f docker-compose.secure.yml -f docker-compose.https.yml up -d --no-deps --build backend frontend
+cd /var/lib/time-manager/current
+sudo docker compose -p 3time_manager --env-file release.env -f docker-compose.secure.yml -f docker-compose.https.yml -f images.yml up -d --no-deps --no-build backend frontend
 ```
 
 Do not use the development Compose file on OVH: it uses demonstration database credentials instead of the secured application role. Do not use `--remove-orphans`, `down -v`, or volume removal commands. The stopped `time_manager_db` container and `3time_manager_postgres_data` volume are incident evidence; never restart or write to them during normal deployment.

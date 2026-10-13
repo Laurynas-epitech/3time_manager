@@ -66,7 +66,10 @@ headers, diagnostic denial and mobile offline checks passed. See the
 [deployment record](validation/security-deployment-20261013.md) for evidence and rollback.
 The [local follow-up assessment](validation/security-assessment-20261013.md) records
 52 backend tests, controlled resource measurements, HTTP/TLS observation and a
-confirmed copied-session replay after logout. These follow-up fixes are not deployed.
+confirmed copied-session replay after logout. These follow-up fixes were subsequently
+included in the [authorized automatic release](validation/automatic-deployment-20261013.md)
+at `215e8f8`; live HTTPS/reporting/role/offline checks passed. Token revocation remains
+optional unimplemented hardening.
 New releases must repeat release checks. A full pentest, sustained/distributed resource
 testing and physical-device assessment remain open. Targeted results do not establish
 a complete security audit.

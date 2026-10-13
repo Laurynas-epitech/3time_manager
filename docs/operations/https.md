@@ -13,8 +13,8 @@ The HTTPS Compose overlay enables Secure JWT cookies. The base secured Compose b
 Always include the HTTPS overlay:
 
 ```sh
-cd /home/ubuntu/time-manager-releases/security-87bc705
-sudo docker compose -p 3time_manager --env-file .env -f docker-compose.secure.yml -f docker-compose.https.yml up -d --no-deps --build backend frontend
+cd /var/lib/time-manager/current
+sudo docker compose -p 3time_manager --env-file release.env -f docker-compose.secure.yml -f docker-compose.https.yml -f images.yml up -d --no-deps --no-build backend frontend
 ```
 
 Using only the base Compose disables Secure-cookie mode. Do not run legacy deployment scripts without reviewing their Compose invocations. No volumes or orphans should be removed.

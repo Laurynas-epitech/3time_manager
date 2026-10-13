@@ -75,10 +75,10 @@ login credentials are separate.
 Latest local checks, October 13, 2026: 61 backend tests, four pagination tests,
 three reporting tests, production/PWA build, required-route/chart browser checks,
 targeted security browser checks, migration checks and offline regression passed.
-Revision `87bc705` was subsequently deployed to OVH and passed targeted live checks;
-see the [deployment record](docs/validation/security-deployment-20261013.md).
-Main-only automatic deployment is prepared locally, with operational verification
-and credential provisioning outstanding. See the
+Revision `215e8f8` was deployed through the successful main workflow after authorized
+host/secret provisioning. Live reporting, charts, HTTPS/authentication, offline replay,
+database preservation and a disposable backup restore passed; see the
+[automatic release record](docs/validation/automatic-deployment-20261013.md). See the
 [requirement report](docs/validation/remediation-verification-20261013.md) and
-[deployment runbook](docs/operations/automatic-deployment.md). The new remediation
-has not been deployed.
+[deployment runbook](docs/operations/automatic-deployment.md) for operation and
+remaining verification boundaries.

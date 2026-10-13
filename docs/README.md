@@ -8,6 +8,7 @@ Start with the [project overview and local setup](../README.md).
 | [Testing](testing.md) | Repeatable checks and dated verification results |
 | [October 13 requirements remediation](validation/remediation-verification-20261013.md) | All 155 supplied rows, fresh tests and unfinished scope |
 | [Automatic deployment preparation](operations/automatic-deployment.md) | Main release pipeline, provisioning and rollout verification |
+| [Verified October 13 automatic release](validation/automatic-deployment-20261013.md) | Successful workflow, live checks, preserved data and backup restore |
 | [October 13 security deployment](validation/security-deployment-20261013.md) | Live verification, release location and rollback |
 | [October 13 local security assessment](validation/security-assessment-20261013.md) | Follow-up fixes, controlled test results and unresolved risks |
 | [Offline attendance](features/offline.md) | PWA behavior, storage, retries and limitations |
