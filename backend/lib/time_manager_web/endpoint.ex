@@ -44,6 +44,8 @@ defmodule TimeManagerWeb.Endpoint do
   plug Plug.Parsers,
     parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
+    # The API only receives small JSON bodies; reject anything above 1 MB.
+    length: 1_000_000,
     json_decoder: Phoenix.json_library()
 
   plug Plug.MethodOverride

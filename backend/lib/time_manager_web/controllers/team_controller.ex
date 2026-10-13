@@ -7,12 +7,12 @@ defmodule TimeManagerWeb.TeamController do
   action_fallback TimeManagerWeb.FallbackController
 
   # admin: all teams / others: teams they manage or belong to
-  def index(conn, _params) do
+  def index(conn, params) do
     current = conn.assigns.current_user
 
     teams =
       if Authorization.admin?(current),
-        do: Teams.list_teams(),
+        do: Teams.list_teams(params),
         else: Teams.list_teams_for_user(current.id)
 
     render(conn, :index, teams: teams)

@@ -3,6 +3,12 @@ defmodule TimeManagerWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug :put_secure_browser_headers
+  end
+
+  # Brute-force protection for login / registration (see config :rate_limits)
+  pipeline :auth_rate_limit do
+    plug TimeManagerWeb.Plugs.RateLimit, :auth
   end
 
   # JWT cookie + x-csrf-token header -> conn.assigns.current_user
@@ -16,7 +22,7 @@ defmodule TimeManagerWeb.Router do
 
   # PUBLIC
   scope "/api/auth", TimeManagerWeb do
-    pipe_through :api
+    pipe_through [:api, :auth_rate_limit]
 
     post "/register", AuthController, :register
     post "/login", AuthController, :login

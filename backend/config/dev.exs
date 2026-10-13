@@ -15,7 +15,8 @@ config :time_manager, TimeManagerWeb.Endpoint,
   http: [ip: {0, 0, 0, 0}],
   check_origin: false,
   code_reloader: true,
-  debug_errors: true,
+  # Debug pages leak source code and params; the OVH deployment runs MIX_ENV=dev.
+  debug_errors: false,
   secret_key_base: "dev-only-secret-key-base-0123456789abcdefghijklmnopqrstuvwxyz-ABCDEFGHIJ",
   watchers: []
 

@@ -54,7 +54,7 @@
               v-model="password"
               type="password"
               autocomplete="new-password"
-              minlength="6"
+              minlength="8"
             />
           </div>
 

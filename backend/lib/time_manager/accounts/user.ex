@@ -19,6 +19,7 @@ defmodule TimeManager.Accounts.User do
     user
     |> cast(attrs, [:username, :email])
     |> validate_required([:username, :email])
+    |> validate_length(:username, max: 50)
     |> validate_email()
   end
 
@@ -55,7 +56,7 @@ defmodule TimeManager.Accounts.User do
   end
 
   defp hash_password(changeset) do
-    changeset = validate_length(changeset, :password, min: 6, max: 72)
+    changeset = validate_length(changeset, :password, min: 8, max: 72)
 
     password = get_change(changeset, :password)
 

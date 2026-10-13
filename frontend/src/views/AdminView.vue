@@ -43,7 +43,7 @@
               id="a-password"
               v-model="form.password"
               type="password"
-              minlength="6"
+              minlength="8"
               autocomplete="new-password"
               required
             />

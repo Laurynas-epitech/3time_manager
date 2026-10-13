@@ -30,6 +30,9 @@ config :time_manager, TimeManagerWeb.Endpoint,
 
 config :time_manager, TimeManager.Mailer, adapter: Swoosh.Adapters.Local
 
+# Requests allowed per client IP and time window (TimeManagerWeb.Plugs.RateLimit)
+config :time_manager, :rate_limits, auth: [limit: 10, window_ms: 60_000]
+
 config :esbuild,
   version: "0.25.4",
   time_manager: [

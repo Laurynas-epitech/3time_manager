@@ -42,13 +42,13 @@
         </div>
 
         <div class="field">
-          <label for="reg-password">Password (6 characters minimum)</label>
+          <label for="reg-password">Password (8 characters minimum)</label>
           <input
             id="reg-password"
             v-model="password"
             type="password"
             autocomplete="new-password"
-            minlength="6"
+            minlength="8"
             required
           />
         </div>

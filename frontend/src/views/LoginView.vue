@@ -91,7 +91,10 @@ export default {
 
       try {
         await auth.login(this.email, this.password);
-        this.$router.push(this.$route.query.redirect || "/");
+        // Only follow in-app paths ("/x"), never "//host" or full URLs.
+        const redirect = this.$route.query.redirect;
+        const safe = typeof redirect === "string" && /^\/(?![\/\\])/.test(redirect);
+        this.$router.push(safe ? redirect : "/");
       } catch (error) {
         this.error = errorMessage(error, "Could not log in.");
       } finally {

@@ -5,15 +5,21 @@ defmodule TimeManager.Teams do
   """
 
   import Ecto.Query, warn: false
-  alias TimeManager.Repo
+  alias TimeManager.{Pagination, Repo}
 
   alias TimeManager.Accounts.User
   alias TimeManager.Teams.Team
 
   @preloads [manager: :role, members: :role]
+  @max_teams 200
 
-  def list_teams do
-    Team |> order_by(:id) |> Repo.all() |> Repo.preload(@preloads)
+  @doc "All teams, at most #{@max_teams} per page (`\"limit\"` / `\"offset\"` params)."
+  def list_teams(params \\ %{}) do
+    Team
+    |> order_by(:id)
+    |> Pagination.paginate(params, @max_teams)
+    |> Repo.all()
+    |> Repo.preload(@preloads)
   end
 
   @doc "Teams a user manages or belongs to."

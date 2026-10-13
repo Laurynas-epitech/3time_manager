@@ -12,27 +12,24 @@ defmodule TimeManagerWeb.UserController do
   # it does not give access to anyone's clocks or working times.
   def index(conn, params) do
     current = conn.assigns.current_user
+    filters = Map.take(params, ["email", "username", "limit", "offset"])
 
-    users =
+    filters =
       cond do
         Authorization.admin?(current) ->
-          Accounts.list_users()
+          filters
 
         Authorization.manager?(current) and params["scope"] == "all" ->
-          Accounts.list_users()
+          filters
 
         Authorization.manager?(current) ->
-          Accounts.list_users_by_ids([current.id | Teams.managed_user_ids(current.id)])
+          Map.put(filters, "ids", [current.id | Teams.managed_user_ids(current.id)])
 
         true ->
-          [current]
+          Map.put(filters, "ids", [current.id])
       end
-      |> Enum.filter(fn user ->
-        (is_nil(params["email"]) or user.email == params["email"]) and
-          (is_nil(params["username"]) or user.username == params["username"])
-      end)
 
-    render(conn, :index, users: users)
+    render(conn, :index, users: Accounts.list_users(filters))
   end
 
   # Admin only (see router): create a user with any role.

@@ -3,21 +3,26 @@ defmodule TimeManagerWeb.ClockController do
 
   import Ecto.Query
 
-  alias TimeManager.Repo
+  alias TimeManager.{Pagination, Repo}
   alias TimeManager.TimeTracking
   alias TimeManager.TimeTracking.Clock
   alias TimeManagerWeb.Authorization
 
   action_fallback TimeManagerWeb.FallbackController
 
-  def show(conn, %{"userID" => user_id}) do
+  @max_clocks 2000
+
+  def show(conn, %{"userID" => user_id} = params) do
     with :ok <- authorize(Authorization.can_view_user?(conn.assigns.current_user, user_id)) do
+      # Page from the newest clock, then return the page oldest first as before.
       clocks =
         from(c in Clock,
           where: c.user_id == ^user_id,
-          order_by: [asc: c.time, asc: c.id]
+          order_by: [desc: c.time, desc: c.id]
         )
+        |> Pagination.paginate(params, @max_clocks)
         |> Repo.all()
+        |> Enum.reverse()
 
       render(conn, :index, clocks: clocks)
     end

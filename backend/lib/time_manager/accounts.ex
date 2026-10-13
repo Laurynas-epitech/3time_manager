@@ -4,11 +4,12 @@ defmodule TimeManager.Accounts do
   """
 
   import Ecto.Query, warn: false
-  alias TimeManager.Repo
+  alias TimeManager.{Pagination, Repo}
 
   alias TimeManager.Accounts.{Role, User}
 
   @default_role "employee"
+  @max_users 500
 
   ## Roles (read-only)
 
@@ -18,20 +19,29 @@ defmodule TimeManager.Accounts do
 
   ## Users
 
-  def list_users do
-    User
+  @doc """
+  Lists users (at most #{@max_users} per page). Filters, all optional:
+  `"ids"` (trusted, set by the caller), exact `"email"` / `"username"`,
+  and `"limit"` / `"offset"` paging.
+  """
+  def list_users(filters \\ %{}) do
+    filters
+    |> Enum.reduce(User, &filter_users/2)
     |> order_by(:id)
+    |> Pagination.paginate(filters, @max_users)
     |> Repo.all()
     |> Repo.preload(:role)
   end
 
-  def list_users_by_ids(ids) do
-    User
-    |> where([u], u.id in ^ids)
-    |> order_by(:id)
-    |> Repo.all()
-    |> Repo.preload(:role)
-  end
+  defp filter_users({"ids", ids}, query) when is_list(ids), do: where(query, [u], u.id in ^ids)
+
+  defp filter_users({"email", email}, query) when is_binary(email),
+    do: where(query, [u], u.email == ^email)
+
+  defp filter_users({"username", name}, query) when is_binary(name),
+    do: where(query, [u], u.username == ^name)
+
+  defp filter_users(_, query), do: query
 
   def get_user!(id), do: User |> Repo.get!(id) |> Repo.preload(:role)
 

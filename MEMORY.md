@@ -1,6 +1,6 @@
 # Time Manager — Project memory and plan
 
-Updated: October 9, 2026 (Europe/Paris).
+Updated: October 13, 2026 (Europe/Paris).
 
 ## Status legend and ongoing update rule
 
@@ -27,6 +27,10 @@ Deferred work keeps its actual status and explicitly says **DEFERRED** in its no
 
 | Date | Work completed | Verification / remaining work |
 |---|---|---|
+| October 13, 2026 | Owner reversed the October 12 local-only decision and requested a GitHub push of the Theme 07 security fixes (E8). | Committed and pushed to origin/integration/offline-dashboard-20261009; GitHub main unchanged; not deployed to OVH and the ops Nginx header change is still not applied there. No checklist status or totals changed. |
+| October 12, 2026 | Drafted the 13-slide English presentation deck (10-15 min, three presenters, app's Punch Card style) as a private claude.ai artifact: https://claude.ai/artifact/HRNCdTs6wPny7xyTnEZbFD | Presenter names, demo environment and backup-video link are placeholders. Deliverable only; no checklist status or totals changed. |
+| October 12, 2026 | Owner decided the October 12 security fixes stay local only (no commit/push/deploy for now) and started planning the project presentation. | Planning only; no checklist status or totals changed. |
+| October 12, 2026 | Owner-approved Theme 07 security audit and simple fixes on integration/offline-dashboard-20261009 (E8): debug_errors off, auth rate limiting, body/field limits, password min 8, capped list paging, security headers, safe login redirect, dependency advisories. | mix precommit 35 tests/0 failures, dev-mode server probes, frontend build, npm audit and Hex advisories clean. 12 Theme 07 items NOT VERIFIED → PARTIAL, NoSQL → NOT APPLICABLE: 118 PASS, 51 PARTIAL, 15 FAIL, 9 NOT VERIFIED, 2 N/A (mandatory 108/46/10/5/2). Not committed or deployed; ops Nginx header change must be applied on OVH manually. |
 | October 9, 2026 | Owner requested GitHub push and OVH deployment of the resolved integration. | Pushed ecfc9ed to origin/integration/offline-dashboard-20261009 (includes origin/main 4168804). Rebuilt frontend/backend with HTTPS overlay; migration already applied. Live ovh-integration-check.cjs passed trusted TLS, 390px fit, cached hours-report period switching, offline reload/new-tab attendance persistence and automatic exactly-once original UUID/timestamp replay. Temporary account/attendance removed. Backup /var/backups/time-manager-integration-20261009T145132Z; pre-release DB dump and images retained. Clean DB stayed running; incident DB stayed stopped; Secure cookies/renewal timer preserved. No checklist status change; totals remain 118/39/15/22/1 (mandatory 108/34/10/18/1). GitHub main is unchanged; integration branch is published. |
 | October 9, 2026 | Integrated GitHub origin/main 4168804 (colleague dashboard/daily-weekly redesign) with local HTTPS and offline work on integration/offline-dashboard-20261009. | Resolved six conflicts in MEMORY, App, ClockManager, WorkingTimes, Dashboard and deleted style.css; kept design tokens/header/toasts/team navigation plus IndexedDB queue/auth/sync. Reports and team status use attendance snapshots; pending/offline punches cannot be edited. Frontend production/PWA build and backend Docker build passed. Updated frontend/tests/offline-attendance.cjs passed offline reload/new-tab persistence, 390px fit, cached report period switching, cross-tab clock, FIFO/original timestamps, duplicate retry, normal reconnect, expiry/account isolation, conflicts and offline logout against disposable local PostgreSQL. Test fixtures stayed local; test containers/network removed. Recovery stash offline-https-before-colleague-integration-20261009 retained. Four colleague criteria retained as PARTIAL; recomputed totals: 118 PASS, 39 PARTIAL, 15 FAIL, 22 NOT VERIFIED, 1 N/A; mandatory 108/34/10/18/1. Integrated redesign has not been deployed or pushed. |
 | October 9, 2026 | Deployed the offline attendance application on OVH at the owner's request. | Frontend/backend production images rebuilt with HTTPS overlay; UUID migration 20261009131557 applied; clean DB retained and incident DB stopped. Backup /var/backups/time-manager-offline-20261009T142508Z; previous images and pre-release dump retained. Local build passed. Live ovh-offline-check.cjs passed offline reload/new-tab reopening, persistent clock-in/out/history and automatic exactly-once synchronization of original UUIDs/timestamps at 390px. Temporary live account/attendance removed. Added offline-ready message and service-worker cache headers. Real-phone/native/full-page coverage remains outstanding; statuses/totals unchanged: 118 PASS, 35 PARTIAL, 19 FAIL, 22 NOT VERIFIED, 1 N/A. |
@@ -86,8 +90,8 @@ Checked boxes mean PASS. Unchecked boxes distinguish PARTIAL, FAIL, NOT VERIFIED
 
 | Scope | PASS | PARTIAL | FAIL | NOT VERIFIED | NOT APPLICABLE |
 |---|---:|---:|---:|---:|---:|
-| All checklist items | 118 | 39 | 15 | 22 | 1 |
-| Mandatory items only | 108 | 34 | 10 | 18 | 1 |
+| All checklist items | 118 | 51 | 15 | 9 | 2 |
+| Mandatory items only | 108 | 46 | 10 | 5 | 2 |
 
 ### Concrete remaining priorities
 
@@ -97,7 +101,7 @@ Checked boxes mean PASS. Unchecked boxes distinguish PARTIAL, FAIL, NOT VERIFIED
 4. Reconcile the Theme 02 named routes/User component criteria with the later authentication views; add needed compatibility routes and exact date/time presentation, plus chart controls and accessibility verification.
 5. Add safe automatic CD; existing CI already passes.
 6. Validate the original Theme 06 mobile brief against the deployed Vue PWA; verify real phones and all required pages. Backend/migration and frontend are now released over HTTPS with live offline attendance verification.
-7. Complete Theme 07 assessment/fixes/retests, including mobile and interception coverage; HTTPS is enabled and must be preserved.
+7. Review and deploy the October 12 Theme 07 fixes (E8, pushed October 13 to the integration branch), then retest them on OVH; still open: interception assessment, payload-level XSS/SQL tests, copied-JWT revocation and manager self-assignment to teams. HTTPS is enabled and must be preserved.
 8. Collect missing Postman, UX, accessibility and employee-protection evidence. Bootstrap-only mismatches are tracked separately and do not by themselves invalidate Theme 05.
 
 ### Evidence keys used below
@@ -108,6 +112,7 @@ Checked boxes mean PASS. Unchecked boxes distinguish PARTIAL, FAIL, NOT VERIFIED
 - **E4 - Infrastructure:** `docker-compose.yml`, `docker-compose.secure.yml`, Dockerfiles, `.github/workflows/ci.yml`, `DATABASE_OPERATIONS.md`, `AUTHENTICATION_SETUP.md`; successful [PR #4 CI run](https://github.com/Laurynas-epitech/3time_manager/actions/runs/37793116761). October 9 HTTPS cutover is now deployed and externally TLS/browser verified; see HTTPS_SETUP.md for certificate, renewal and rollback evidence.
 - **E5 - Authentication:** `THEME05_VALIDATION.md`, `AUTHENTICATION_SETUP.md`, `backend/lib/time_manager/auth/token.ex`, AuthCookie/Authenticate, seeds, role/team migrations, `frontend/src/auth.js`, API/router/views and backend tests. 27 tests passed. JWT includes the issued role; request authorization reloads current role from DB so demotions take effect. Logout clears the cookie but cannot revoke an already copied JWT.
 - **E6 - Mobile/offline:** October 9 implementation: frontend/src/services/{attendance,offlineSession,demoAttendance}.js, auth.js, ClockManager/WorkingTimes/ChartManager, App.vue sync status and vite.config.js PWA caching. Backend clock UUID migration/schema/JSON and transactional record_clock enforce idempotent retries and request ownership/permissions. Production build and frontend/tests/offline-attendance.cjs passed on localhost with a 390px browser viewport and a disposable real backend/database; backend mix precommit passed 29 tests in a separate disposable partition. OFFLINE_SETUP.md records behavior, commands, release order and limits. Local and live OVH offline attendance are verified. The October 9 release applied the UUID migration and rebuilt frontend/backend with the HTTPS overlay, preserving both databases and limited app role. Live ../_local_artifacts/theme05-browser-check/ovh-offline-check.cjs passed offline reload/new-tab reopening and automatic exactly-once replay of original timestamps/UUIDs; temporary account/attendance removed. Backup /var/backups/time-manager-offline-20261009T142508Z. Real-phone/native brief coverage and every mobile page remain incomplete.
+- **E8 - October 12 security audit (pushed, undeployed):** source/config review of all 12 Theme 07 areas plus fixes in the working tree on integration/offline-dashboard-20261009: debug_errors disabled in backend/config/dev.exs (OVH runs MIX_ENV=dev; the old config returned a 71 KB Plug.Debugger HTML page with source paths for a malformed JSON login); ETS rate limiter TimeManager.RateLimiter + TimeManagerWeb.Plugs.RateLimit on /api/auth (10 requests/minute per client IP via X-Real-IP, 429 + Retry-After); 1 MB request body cap; username max 50, team name max 100, password min 8 (frontend minlength too); capped limit/offset paging on users (500), teams (200), clocks (2000, newest kept), working times (2000); Phoenix secure browser headers on the API and nosniff/X-Frame-Options/Referrer-Policy in ops/nginx-time-manager-https.conf (HSTS deliberately omitted because of the short-lived IP certificate); login redirect restricted to in-app paths; decimal 3.2.0/mint 1.11.0 and npm audit fix (source-map-js). Verified: mix precommit 35 tests/0 failures (new test/time_manager_web/controllers/security_test.exs), dev compile with warnings as errors, dev-mode server probes (JSON 400 instead of debug page, 413 for 2 MB body, 422 for 300-char username, 11th login 429 while another IP still gets 401, no plaintext password in logs), frontend production build, npm audit and hex advisories clean. Committed and pushed to the integration branch October 13; not deployed to OVH.
 - **E7 - Security:** incident/auth records document some issues; no complete Theme 07 penetration-test/injection/DoS/mobile report was found. Unverified security criteria must be investigated on authorized isolated targets, not assumed passed.
 
 ## Next work sequence
@@ -418,21 +423,21 @@ These are specified in the Authentication Bootstrap rather than all being strict
 
 ### Penetration testing
 
-- [ ] A penetration test is performed against the application. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
-- [ ] Identified security vulnerabilities are patched. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
+- [ ] A penetration test is performed against the application. **[PARTIAL]** — October 12 source/config audit and local dev-mode probing of all Theme 07 areas (E8); no full live/interception penetration test yet. (E7, E8)
+- [ ] Identified security vulnerabilities are patched. **[PARTIAL]** — October 12 findings patched and tested locally (E8); pushed to the integration branch October 13, not deployed to OVH. (E8)
 
 ### Injection vulnerabilities
 
-- [ ] XSS vulnerabilities are tested. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
-- [ ] Script injection vulnerabilities are tested. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
-- [ ] HTML injection vulnerabilities are tested. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
-- [ ] SQL injection vulnerabilities are tested. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
-- [ ] NoSQL injection vulnerabilities are considered where applicable. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
+- [ ] XSS vulnerabilities are tested. **[PARTIAL]** — Source review: no v-html/innerHTML/eval, Vue escapes interpolation; API sends nosniff/CSP frame-ancestors. No browser payload test recorded. (E8)
+- [ ] Script injection vulnerabilities are tested. **[PARTIAL]** — Same source review as XSS; no dynamic script sinks. Browser payload test outstanding. (E8)
+- [ ] HTML injection vulnerabilities are tested. **[PARTIAL]** — Same source review as XSS; user text only rendered through escaped bindings. Browser payload test outstanding. (E8)
+- [ ] SQL injection vulnerabilities are tested. **[PARTIAL]** — Source review: every query uses Ecto with pinned parameters; no fragment/raw SQL. Payload test outstanding. (E8)
+- [ ] NoSQL injection vulnerabilities are considered where applicable. **[NOT APPLICABLE]** — Considered October 12: the application uses only PostgreSQL through Ecto; no NoSQL datastore exists. (E8)
 
 ### Configuration and authentication security
 
-- [ ] Public access to sensitive configuration files is tested. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
-- [ ] Password hashes are evaluated for resistance to cracking. **[PARTIAL]** — Bcrypt implemented/tested; cracking-resistance assessment not recorded. (E7)
+- [ ] Public access to sensitive configuration files is tested. **[PARTIAL]** — .env/.secrets/keys ignored and absent from Git history; secrets read from files; Nginx only serves dist and proxies /api; debug error pages disabled (E8). Live OVH path probing outstanding. (E8)
+- [ ] Password hashes are evaluated for resistance to cracking. **[PARTIAL]** — Bcrypt (default cost 12, constant-time no-user path); minimum length raised to 8 on October 12 (E8). Cracking-resistance assessment not recorded. (E7, E8)
 - [x] Unauthorized access to frontend routes is tested. **[PASS]** — Specific auth/permission checks covered by tests and recorded browser/API verification; not a full penetration assessment. (E5)
 - [x] Unauthorized access to backend endpoints is tested. **[PASS]** — Specific auth/permission checks covered by tests and recorded browser/API verification; not a full penetration assessment. (E5)
 - [x] JWT cookie HttpOnly protection is checked. **[PASS]** — Specific auth/permission checks covered by tests and recorded browser/API verification; not a full penetration assessment. (E5)
@@ -441,16 +446,16 @@ These are specified in the Authentication Bootstrap rather than all being strict
 
 ### Availability and network security
 
-- [ ] The possibility of database flooding or denial of service is tested. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
-- [ ] Appropriate protections are implemented for identified denial-of-service weaknesses. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
+- [ ] The possibility of database flooding or denial of service is tested. **[PARTIAL]** — October 12 local tests of auth brute force, oversized bodies/fields and unbounded lists (E8). No load test; live OVH flooding tests are not authorized. (E8)
+- [ ] Appropriate protections are implemented for identified denial-of-service weaknesses. **[PARTIAL]** — Auth rate limit, 1 MB body cap, field length limits and capped paging implemented and tested locally (E8); not deployed; clock/working-time creation is not rate limited. (E8)
 - [x] HTTPS enforcement is verified. **[PASS]** — Owner authorized October 9 OVH cutover: trusted IP certificate, HTTP 308 redirect, Secure/HttpOnly cookies, HTTPS API/login/logout and loopback-only app bindings verified. (E7)
 - [ ] Risks of traffic interception over insecure connections are investigated. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
 
 ### Additional security coverage
 
-- [ ] Other relevant attack vectors are investigated. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
-- [ ] The mobile application is included in the security assessment. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
-- [ ] Identified vulnerabilities are fixed and the fixes are verified. **[NOT VERIFIED]** — Needs evidence/review; not marked complete. (E7)
+- [ ] Other relevant attack vectors are investigated. **[PARTIAL]** — October 12: debug error pages, login open redirect, CORS, CSRF, security headers and Hex/npm advisories reviewed and fixed locally (E8). Manager self-assignment of any user to a team (grants data access) is an open design question. (E8)
+- [ ] The mobile application is included in the security assessment. **[PARTIAL]** — Vue PWA reviewed October 12: JWT only in HttpOnly cookie, no secrets embedded, relative /api over HTTPS; CSRF token and non-secret profile in localStorage. No native app or real-device test. (E6, E8)
+- [ ] Identified vulnerabilities are fixed and the fixes are verified. **[PARTIAL]** — Fixes verified locally by tests and dev-mode probes (E8); deployment and OVH retest outstanding. (E8)
 
 ### Recommended audit practices
 

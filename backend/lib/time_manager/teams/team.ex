@@ -18,6 +18,7 @@ defmodule TimeManager.Teams.Team do
     team
     |> cast(attrs, [:name, :manager_id])
     |> validate_required([:name])
+    |> validate_length(:name, max: 100)
     |> foreign_key_constraint(:manager_id)
   end
 end

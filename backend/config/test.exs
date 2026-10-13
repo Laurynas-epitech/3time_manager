@@ -36,5 +36,8 @@ config :phoenix, :plug_init_mode, :runtime
 config :phoenix,
   sort_verified_routes_query_params: true
 
+# Tests log in many times from the same address
+config :time_manager, :rate_limits, auth: [limit: 10_000, window_ms: 60_000]
+
 # Fast (insecure) hashing in tests only
 config :bcrypt_elixir, log_rounds: 1

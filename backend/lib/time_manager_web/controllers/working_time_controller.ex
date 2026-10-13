@@ -3,12 +3,14 @@ defmodule TimeManagerWeb.WorkingTimeController do
 
   import Ecto.Query
 
-  alias TimeManager.Repo
+  alias TimeManager.{Pagination, Repo}
   alias TimeManager.TimeTracking
   alias TimeManager.TimeTracking.WorkingTime
   alias TimeManagerWeb.Authorization
 
   action_fallback TimeManagerWeb.FallbackController
+
+  @max_working_times 2000
 
   def index(conn, %{"userID" => user_id} = params) do
     if Authorization.can_view_user?(conn.assigns.current_user, user_id) do
@@ -38,7 +40,12 @@ defmodule TimeManagerWeb.WorkingTimeController do
           query
       end
 
-    workingtime = Repo.all(query)
+    # Page from the newest working time, then return the page oldest first.
+    workingtime =
+      from(w in query, order_by: [desc: w.start, desc: w.id])
+      |> Pagination.paginate(params, @max_working_times)
+      |> Repo.all()
+      |> Enum.reverse()
 
     render(conn, :index, workingtime: workingtime)
   end
