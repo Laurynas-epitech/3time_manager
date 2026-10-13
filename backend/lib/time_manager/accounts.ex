@@ -35,6 +35,11 @@ defmodule TimeManager.Accounts do
 
   defp filter_users({"ids", ids}, query) when is_list(ids), do: where(query, [u], u.id in ^ids)
 
+  defp filter_users({"manager_id", manager_id}, query) do
+    members = TimeManager.Teams.managed_user_query(manager_id)
+    where(query, [u], u.id == ^manager_id or u.id in subquery(members))
+  end
+
   defp filter_users({"email", email}, query) when is_binary(email),
     do: where(query, [u], u.email == ^email)
 

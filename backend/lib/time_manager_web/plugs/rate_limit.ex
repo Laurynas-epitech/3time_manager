@@ -15,9 +15,23 @@ defmodule TimeManagerWeb.Plugs.RateLimit do
   def init(name) when is_atom(name), do: name
 
   def call(conn, name) do
+    if name == :writes and
+         (conn.method in ["GET", "HEAD", "OPTIONS"] or conn.request_path == "/api/auth/logout") do
+      conn
+    else
+      limit(conn, name)
+    end
+  end
+
+  defp limit(conn, name) do
     config = Application.fetch_env!(:time_manager, :rate_limits) |> Keyword.fetch!(name)
 
-    case RateLimiter.hit({name, client_ip(conn)}, config[:limit], config[:window_ms]) do
+    key =
+      if name == :writes,
+        do: {name, conn.assigns.current_user.id},
+        else: {name, client_ip(conn)}
+
+    case RateLimiter.hit(key, config[:limit], config[:window_ms]) do
       :ok ->
         conn
 
@@ -30,13 +44,21 @@ defmodule TimeManagerWeb.Plugs.RateLimit do
     end
   end
 
-  # Behind Nginx every request comes from the proxy, so the real client address
-  # is taken from X-Real-IP. The public Nginx overwrites this header and the
-  # backend port is bound to loopback on the server, so clients cannot spoof it.
+  # The trusted proxy must overwrite X-Real-IP. Untrusted peers cannot choose keys.
   defp client_ip(conn) do
-    case get_req_header(conn, "x-real-ip") do
-      [ip | _] -> ip
-      [] -> conn.remote_ip |> :inet.ntoa() |> to_string()
+    if conn.remote_ip in Application.get_env(:time_manager, :trusted_proxy_ips, []) do
+      case get_req_header(conn, "x-real-ip") do
+        [ip] ->
+          case :inet.parse_address(String.to_charlist(ip)) do
+            {:ok, address} -> address
+            _ -> conn.remote_ip
+          end
+
+        _ ->
+          conn.remote_ip
+      end
+    else
+      conn.remote_ip
     end
   end
 end

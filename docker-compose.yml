@@ -22,9 +22,10 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     environment:
       MIX_ENV: dev
+      TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-}
       JWT_SECRET: ${JWT_SECRET:?Set a private JWT_SECRET before starting the backend}
 
   frontend:

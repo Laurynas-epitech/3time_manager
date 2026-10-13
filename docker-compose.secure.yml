@@ -31,6 +31,7 @@ services:
       - "127.0.0.1:4000:4000"
     environment:
       MIX_ENV: dev
+      TRUSTED_PROXY_IPS: ${TRUSTED_PROXY_IPS:-}
       DB_USERNAME: time_manager_app
       DB_PASSWORD_FILE: /run/secrets/db_app_password
       DB_HOST: db_secure

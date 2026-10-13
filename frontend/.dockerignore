@@ -1,9 +1,14 @@
-node_modules
-dist
-.git
+node_modules/
+dist/
+.git/
 .gitignore
-# Deployment secrets
 .env
 .env.*
 !.env.example
 .secrets/
+AGENTS.md
+MEMORY.md
+.local-notes/
+playwright-report/
+test-results/
+coverage/

@@ -56,7 +56,10 @@ defmodule TimeManager.Accounts.User do
   end
 
   defp hash_password(changeset) do
-    changeset = validate_length(changeset, :password, min: 8, max: 72)
+    changeset =
+      changeset
+      |> validate_length(:password, min: 8)
+      |> validate_length(:password, max: 72, count: :bytes)
 
     password = get_change(changeset, :password)
 

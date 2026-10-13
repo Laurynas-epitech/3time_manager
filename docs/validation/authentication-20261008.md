@@ -1,12 +1,14 @@
 # Theme 05 validation — October 8, 2026
 
-## Current verification
+> Historical October 8 verification. Later HTTPS/offline releases and October 13 security fixes supersede the operational limits below. See [current security documentation](../security.md) and [testing](../testing.md).
+
+## Verification at that revision
 
 - Frontend: `npm run build` passed locally (107 modules transformed).
 - Backend: `mix precommit` passed against the current backend source in the existing Elixir test-cache image on OVH: 27 tests, 0 failures. This includes compilation with warnings treated as errors, unused dependency check, formatting, and tests.
 - Backend validation used disposable containers, a PostgreSQL 16 database on tmpfs, no published ports, and no production data or volume mounts. Production containers were not changed by these checks.
 - `git diff --check` passed. Deployment shell syntax passed with local Git Bash; backup Python syntax passed with Python AST parsing. These checks do not execute deployment or backup operations.
-- Authentication integration/browser and production verification recorded earlier are documented in AUTHENTICATION_SETUP.md; browser checks were not repeated in this validation pass.
+- Authentication integration/browser and production verification recorded earlier are documented in ../operations/authentication.md; browser checks were not repeated in this validation pass.
 
 ## Theme 05 evidence
 

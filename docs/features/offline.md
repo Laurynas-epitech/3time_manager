@@ -18,7 +18,7 @@ Only attendance actions are queued. Registration, profile changes, team/admin op
 
 ## Backend preparation
 
-Deploy the updated backend and apply `backend/priv/repo/migrations/20261009131557_add_clock_client_action_id.exs` using the existing migration-capable database account and [database runbook](DATABASE_OPERATIONS.md) before releasing the frontend. The migration adds an optional UUID column and a unique `(user_id, client_action_id)` index without deleting existing records. Existing callers without an action ID continue to work.
+Deploy the updated backend and apply `backend/priv/repo/migrations/20261009131557_add_clock_client_action_id.exs` using the existing migration-capable database account and [database runbook](../operations/database.md) before releasing the frontend. The migration adds an optional UUID column and a unique `(user_id, client_action_id)` index without deleting existing records. Existing callers without an action ID continue to work.
 
 The frontend refuses to acknowledge queued events if the response does not contain their action ID. An older backend cannot safely synchronize retries: update it first rather than experimenting with real attendance against the old API.
 
@@ -33,7 +33,7 @@ npm.cmd run build
 npm.cmd run preview -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
-Use port 5173 because the existing backend CORS configuration allows it. Stop an existing dev server on that port first. Use the production preview for offline reopening; `npm run dev` depends on the Vite development server and does not provide the production service-worker behavior.
+Use port 5173 with the same-origin /api proxy. Stop an existing dev server on that port first. Use the production preview for offline reopening; `npm run dev` depends on the Vite development server and does not provide the production service-worker behavior.
 
 1. Open `http://127.0.0.1:5173`, sign in with a real account and wait for attendance to load.
 2. In browser developer tools, verify that the service worker is activated and controls the page.
@@ -62,11 +62,11 @@ $env:BROWSER_EXECUTABLE_PATH = 'C:/Program Files (x86)/Microsoft/Edge/Applicatio
 npm.cmd run test:offline
 ```
 
-Alternatively, run `npx playwright install chromium` and omit `BROWSER_EXECUTABLE_PATH`. `OFFLINE_TEST_URL` and `OFFLINE_TEST_API` override the default localhost addresses; their origins must be allowed by backend CORS.
+Alternatively, run `npx playwright install chromium` and omit `BROWSER_EXECUTABLE_PATH`. `OFFLINE_TEST_URL` and `OFFLINE_TEST_API` override the default localhost addresses; the API defaults to the preview server's /api proxy. Use only isolated disposable targets.
 
 The test covers production offline reload and tab reopening, mobile viewport, cross-tab attendance updates, persistent queue/history, ordered replay, original timestamps, lost-response retry without duplicates, expired sessions, account isolation, conflict retention and offline logout. Backend `mix precommit` also covers UUID validation, payload reuse rejection, owner/permission enforcement and legacy transitions. Use a separate disposable database partition for backend tests if the browser backend is running.
 
-Production deployment completed October 9, 2026. The targeted live check `../_local_artifacts/theme05-browser-check/ovh-offline-check.cjs` passed trusted HTTPS, offline reload/new-tab reopening at a 390px viewport, persistent clock-in/out/history, and automatic reconnect replay with original UUIDs/timestamps exactly once. Its temporary account and attendance were deleted. Real-phone device validation remains outstanding.
+Production deployment completed October 9, 2026. The targeted live check (retained separately as deployment evidence) passed trusted HTTPS, offline reload/new-tab reopening at a 390px viewport, persistent clock-in/out/history, and automatic reconnect replay with original UUIDs/timestamps exactly once. Its temporary account and attendance were deleted. Real-phone device validation remains outstanding.
 
 Frontend/backend rebuilt with both secure and HTTPS Compose files; migration `20261009131557` applied with the administrator in a temporary migration container. The running backend retains its limited database role. Release backup: `/var/backups/time-manager-offline-20261009T142508Z/`; pre-release database dump and previous images retained. Active database stayed running; incident database stayed stopped. Local production build passed with the offline-ready message and service-worker cache headers.
 

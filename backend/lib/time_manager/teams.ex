@@ -10,8 +10,8 @@ defmodule TimeManager.Teams do
   alias TimeManager.Accounts.User
   alias TimeManager.Teams.Team
 
-  @preloads [manager: :role, members: :role]
-  @max_teams 200
+  @max_teams 50
+  @max_members 100
 
   @doc "All teams, at most #{@max_teams} per page (`\"limit\"` / `\"offset\"` params)."
   def list_teams(params \\ %{}) do
@@ -19,22 +19,43 @@ defmodule TimeManager.Teams do
     |> order_by(:id)
     |> Pagination.paginate(params, @max_teams)
     |> Repo.all()
-    |> Repo.preload(@preloads)
+    |> Enum.map(&preload_team/1)
   end
 
   @doc "Teams a user manages or belongs to."
-  def list_teams_for_user(user_id) do
+  def list_teams_for_user(user_id, params \\ %{}) do
     from(t in Team,
       left_join: m in assoc(t, :members),
       where: t.manager_id == ^user_id or m.id == ^user_id,
       distinct: true,
       order_by: t.id
     )
+    |> Pagination.paginate(params, @max_teams)
     |> Repo.all()
-    |> Repo.preload(@preloads)
+    |> Enum.map(&preload_team/1)
   end
 
-  def get_team!(id), do: Team |> Repo.get!(id) |> Repo.preload(@preloads)
+  def get_team!(id), do: Team |> Repo.get!(id) |> preload_team()
+
+  def list_members(team_id, params \\ %{}) do
+    member_query(team_id)
+    |> Pagination.paginate(params, @max_members)
+    |> Repo.all()
+    |> Repo.preload(:role)
+  end
+
+  def member?(team_id, user_id) do
+    from(tu in "team_users", where: tu.team_id == ^team_id and tu.user_id == ^user_id)
+    |> Repo.exists?()
+  end
+
+  def managed_user_query(manager_id) do
+    from(t in Team,
+      join: m in assoc(t, :members),
+      where: t.manager_id == ^manager_id,
+      select: m.id
+    )
+  end
 
   def create_team(attrs) do
     %Team{}
@@ -96,6 +117,26 @@ defmodule TimeManager.Teams do
     |> Repo.all()
   end
 
-  defp preload({:ok, team}), do: {:ok, Repo.preload(team, @preloads, force: true)}
+  defp member_query(team_id) do
+    from(u in User,
+      join: tu in "team_users",
+      on: tu.user_id == u.id,
+      where: tu.team_id == ^team_id,
+      order_by: u.id
+    )
+  end
+
+  defp preload_team(team) do
+    members = member_query(team.id) |> limit(^(@max_members + 1)) |> Repo.all()
+    team = Repo.preload(team, manager: :role)
+
+    %{
+      team
+      | members: members |> Enum.take(@max_members) |> Repo.preload(:role),
+        members_has_more: length(members) > @max_members
+    }
+  end
+
+  defp preload({:ok, team}), do: {:ok, preload_team(team)}
   defp preload(error), do: error
 end

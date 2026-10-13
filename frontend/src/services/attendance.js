@@ -1,6 +1,6 @@
 import { reactive, readonly, watch } from 'vue';
 import { openDB } from 'idb';
-import api, { apiScope, errorMessage } from '../api';
+import api, { apiScope, errorMessage, fetchAll } from '../api';
 import auth from '../auth';
 
 // A fresh namespace excludes legacy test actions with no verified account owner.
@@ -54,8 +54,12 @@ function rows(response) {
 }
 
 async function refreshSnapshot(db, ownerId, userId) {
+  const check = () => {
+    if (auth.state.user?.id !== ownerId || auth.isDemo()) throw new Error('Account changed.');
+  };
   const [clocks, times] = await Promise.all([
-    api.get(`/clock/${userId}`), api.get(`/workingtime/${userId}`),
+    api.get(`/clock/${userId}`, { params: { limit: 1 } }),
+    fetchAll(`/workingtime/${userId}`, { reversePages: true, check }),
   ]);
   if (auth.state.user?.id !== ownerId || auth.isDemo()) throw new Error('Account changed.');
   const snapshot = { key: key(ownerId, userId), clocks: rows(clocks), workingTimes: rows(times) };
@@ -88,7 +92,7 @@ export async function getAttendance(userId, { refresh = true } = {}) {
     if (refresh && navigator.onLine && !actions.length) {
       try { snapshot = await refreshSnapshot(db, ownerId, userId); state.online = true; }
       catch (error) {
-        if (error.response) throw error;
+        if (error.response || !error.isAxiosError) throw error;
         state.online = false;
         if (!snapshot) throw new Error('Connect once to download your attendance before using it offline.');
       }

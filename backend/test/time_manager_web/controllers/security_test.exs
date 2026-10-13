@@ -22,13 +22,12 @@ defmodule TimeManagerWeb.SecurityTest do
       on_exit(fn -> Application.put_env(:time_manager, :rate_limits, previous) end)
 
       # A unique client address so other tests do not share the counter.
-      ip = "203.0.113.#{rem(System.unique_integer([:positive]), 250)}"
+      ip = {203, 0, 113, rem(System.unique_integer([:positive]), 250)}
       user = user_fixture()
 
       attempt = fn ->
-        conn
+        %{conn | remote_ip: ip}
         |> put_req_header("accept", "application/json")
-        |> put_req_header("x-real-ip", ip)
         |> post(~p"/api/auth/login", email: user.email, password: "wrong-password")
       end
 
@@ -41,7 +40,147 @@ defmodule TimeManagerWeb.SecurityTest do
     end
   end
 
+  test "rotating X-Real-IP cannot bypass an untrusted peer's limit", %{conn: conn} do
+    previous = Application.fetch_env!(:time_manager, :rate_limits)
+    proxies = Application.get_env(:time_manager, :trusted_proxy_ips, [])
+
+    Application.put_env(
+      :time_manager,
+      :rate_limits,
+      Keyword.put(previous, :auth, limit: 1, window_ms: 60_000)
+    )
+
+    Application.put_env(:time_manager, :trusted_proxy_ips, [])
+
+    on_exit(fn ->
+      Application.put_env(:time_manager, :rate_limits, previous)
+      Application.put_env(:time_manager, :trusted_proxy_ips, proxies)
+    end)
+
+    peer = {198, 51, 100, rem(System.unique_integer([:positive]), 250)}
+
+    request = fn header ->
+      %{conn | remote_ip: peer}
+      |> put_req_header("x-real-ip", header)
+      |> TimeManagerWeb.Plugs.RateLimit.call(:auth)
+    end
+
+    refute request.("192.0.2.1").halted
+    assert request.("192.0.2.2").status == 429
+  end
+
+  test "only a trusted proxy may supply a valid client IP", %{conn: conn} do
+    previous = Application.fetch_env!(:time_manager, :rate_limits)
+    proxies = Application.get_env(:time_manager, :trusted_proxy_ips, [])
+    peer = {198, 51, 100, rem(System.unique_integer([:positive]), 250)}
+
+    Application.put_env(
+      :time_manager,
+      :rate_limits,
+      Keyword.put(previous, :auth, limit: 1, window_ms: 60_000)
+    )
+
+    Application.put_env(:time_manager, :trusted_proxy_ips, [peer])
+
+    on_exit(fn ->
+      Application.put_env(:time_manager, :rate_limits, previous)
+      Application.put_env(:time_manager, :trusted_proxy_ips, proxies)
+    end)
+
+    request = fn header ->
+      %{conn | remote_ip: peer}
+      |> put_req_header("x-real-ip", header)
+      |> TimeManagerWeb.Plugs.RateLimit.call(:auth)
+    end
+
+    token = rem(System.unique_integer([:positive]), 65_535)
+    first = "2001:db8::#{Integer.to_string(token, 16)}"
+    second = "2001:db8:1::#{Integer.to_string(token, 16)}"
+    refute request.(first).halted
+    refute request.(second).halted
+    assert request.(first).status == 429
+    refute request.("malformed-1").halted
+    assert request.("malformed-2").status == 429
+  end
+
+  test "authenticated writes are limited by account while reads remain available", %{conn: conn} do
+    previous = Application.fetch_env!(:time_manager, :rate_limits)
+
+    Application.put_env(
+      :time_manager,
+      :rate_limits,
+      Keyword.put(previous, :writes, limit: 1, window_ms: 60_000)
+    )
+
+    on_exit(fn -> Application.put_env(:time_manager, :rate_limits, previous) end)
+    user = user_fixture()
+    write = %{conn | method: "POST"} |> assign(:current_user, user)
+    refute TimeManagerWeb.Plugs.RateLimit.call(write, :writes).halted
+    assert TimeManagerWeb.Plugs.RateLimit.call(write, :writes).status == 429
+    refute TimeManagerWeb.Plugs.RateLimit.call(%{write | method: "GET"}, :writes).halted
+
+    refute TimeManagerWeb.Plugs.RateLimit.call(
+             %{write | request_path: "/api/auth/logout"},
+             :writes
+           ).halted
+  end
+
+  test "non-admin teams and nested members are bounded with authorized member pages", %{
+    conn: conn
+  } do
+    employee = user_fixture()
+    outsider = user_fixture()
+    {:ok, team} = Teams.create_team(%{"name" => "Large team"})
+    {:ok, _} = Teams.add_member(team, employee)
+    for _ <- 1..100, do: Teams.add_member(team, user_fixture())
+
+    [result] = Teams.list_teams_for_user(employee.id, %{"limit" => "1"})
+    assert length(result.members) == 100
+    assert result.members_has_more
+    assert length(Teams.list_members(team.id, %{"limit" => "5000"})) == 100
+    assert length(Teams.list_members(team.id, %{"offset" => "100"})) == 1
+
+    assert conn
+           |> log_in(employee)
+           |> get(~p"/api/teams/#{team.id}/members?offset=100")
+           |> json_response(200)
+
+    assert conn
+           |> log_in(outsider)
+           |> get(~p"/api/teams/#{team.id}/members")
+           |> json_response(403)
+  end
+
   describe "input limits" do
+    test "multibyte passwords cannot exceed bcrypt's 72-byte input limit" do
+      assert {:error, changeset} =
+               Accounts.create_user(%{
+                 "username" => "Unicode password",
+                 "email" => unique_email(),
+                 "password" => String.duplicate("é", 40)
+               })
+
+      assert %{password: [_]} = TimeManager.DataCase.errors_on(changeset)
+    end
+
+    test "invalid registration shapes return 400 instead of crashing", %{conn: conn} do
+      for user <- ["unexpected string", ["unexpected list"], nil] do
+        assert conn |> post(~p"/api/auth/register", %{user: user}) |> json_response(400)
+      end
+    end
+
+    test "oversized and malformed JSON errors retain security headers" do
+      for {body, status} <- [{String.duplicate(" ", 1_000_001), 413}, {"{invalid", 400}] do
+        response =
+          build_conn(:post, "/api/auth/login", body)
+          |> put_req_header("content-type", "application/json")
+          |> TimeManagerWeb.Endpoint.call(TimeManagerWeb.Endpoint.init([]))
+
+        assert json_response(response, status)
+        assert get_resp_header(response, "x-content-type-options") == ["nosniff"]
+      end
+    end
+
     test "username, team name and password lengths are validated" do
       long_name = String.duplicate("a", 51)
 

@@ -14,14 +14,14 @@ config :time_manager, TimeManager.Repo,
 config :time_manager, TimeManagerWeb.Endpoint,
   http: [ip: {0, 0, 0, 0}],
   check_origin: false,
-  code_reloader: true,
+  code_reloader: false,
   # Debug pages leak source code and params; the OVH deployment runs MIX_ENV=dev.
   debug_errors: false,
   secret_key_base: "dev-only-secret-key-base-0123456789abcdefghijklmnopqrstuvwxyz-ABCDEFGHIJ",
   watchers: []
 
-# Enable dev routes
-config :time_manager, dev_routes: true
+# Diagnostics must be explicitly enabled on a developer's private machine.
+config :time_manager, dev_routes: System.get_env("ENABLE_DEV_ROUTES") == "true"
 
 config :logger, :default_formatter, format: "[$level] $message\n"
 

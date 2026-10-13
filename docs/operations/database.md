@@ -7,7 +7,7 @@ cd /home/ubuntu/3time_manager
 sudo docker compose -f docker-compose.secure.yml -f docker-compose.https.yml up -d --build
 ```
 
-Do not use the old default Compose file on OVH: it contains malformed historical settings. Do not use `--remove-orphans`, `down -v`, or volume removal commands. The stopped `time_manager_db` container and `3time_manager_postgres_data` volume are incident evidence; never restart or write to them during normal deployment.
+Do not use the development Compose file on OVH: it uses demonstration database credentials instead of the secured application role. Do not use `--remove-orphans`, `down -v`, or volume removal commands. The stopped `time_manager_db` container and `3time_manager_postgres_data` volume are incident evidence; never restart or write to them during normal deployment.
 
 Active database: `time_manager_db_secure`, hostname `db_secure`, database `time_manager_dev`, external volume `time_manager_postgres_secure_20261008`. PostgreSQL has no host port. The backend uses the `time_manager_app` role, limited to SELECT/INSERT/UPDATE/DELETE on users, workingtime, clocks, and sequence usage. It cannot create roles, databases, tables, or operate on schema_migrations. Future tables require explicit grants after administrator migrations; this is intentional.
 
@@ -31,7 +31,7 @@ Then review and grant application permissions only on any newly added applicatio
 
 Verification after cutover: all three migrations applied; API user CRUD passed with the temporary verification user removed; application DDL, role creation, and migration-table reads were denied; old cluster stopped with restart policy disabled. Passwords on the stopped compromised cluster were not modified: access was retired by stopping that cluster, rather than attempting to repair its abnormal duplicate postgres roles. Its incident archive remains preserved.
 
-Authentication/authorization and scheduled, tested backups were subsequently implemented; see AUTHENTICATION_SETUP.md for the deployment record. HTTPS is deployed; retain its Compose overlay in future deployments. The October 9 offline release applied UUID migration 20261009131557 without replacing the live database or changing the application's limited role. Host-compromise assessment, independent off-server automated backups, and failure alerts remain outstanding. This does not establish that the host itself is trusted.
+Authentication/authorization and scheduled, tested backups were subsequently implemented; see authentication.md for the deployment record. HTTPS is deployed; retain its Compose overlay in future deployments. The October 9 offline release applied UUID migration 20261009131557 without replacing the live database or changing the application's limited role. Host-compromise assessment, independent off-server automated backups, and failure alerts remain outstanding. This does not establish that the host itself is trusted.
 
 ## Automated daily backups
 

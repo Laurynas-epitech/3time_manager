@@ -41,12 +41,10 @@ defmodule TimeManagerWeb.Endpoint do
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
-  plug Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json],
-    pass: ["*/*"],
-    # The API only receives small JSON bodies; reject anything above 1 MB.
-    length: 1_000_000,
-    json_decoder: Phoenix.json_library()
+  # Set headers before parsing so malformed/oversized requests also receive them.
+  plug :security_headers
+
+  plug :parse_request
 
   plug Plug.MethodOverride
   plug Plug.Head
@@ -65,4 +63,30 @@ defmodule TimeManagerWeb.Endpoint do
     allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 
   plug TimeManagerWeb.Router
+
+  defp security_headers(conn, _opts) do
+    Phoenix.Controller.put_secure_browser_headers(conn)
+  end
+
+  defp parse_request(conn, _opts) do
+    options =
+      Plug.Parsers.init(
+        parsers: [:urlencoded, :multipart, :json],
+        pass: ["*/*"],
+        length: 1_000_000,
+        json_decoder: Phoenix.json_library()
+      )
+
+    Plug.Parsers.call(conn, options)
+  rescue
+    error in [
+      Plug.Parsers.ParseError,
+      Plug.Parsers.RequestTooLargeError,
+      Plug.Parsers.UnsupportedMediaTypeError
+    ] ->
+      conn
+      |> Plug.Conn.put_status(Plug.Exception.status(error))
+      |> Phoenix.Controller.json(%{errors: %{detail: "Invalid or oversized request body"}})
+      |> Plug.Conn.halt()
+  end
 end

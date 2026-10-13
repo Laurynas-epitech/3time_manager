@@ -4,6 +4,7 @@ defmodule TimeManager.Teams.Team do
 
   schema "teams" do
     field :name, :string
+    field :members_has_more, :boolean, virtual: true, default: false
 
     belongs_to :manager, TimeManager.Accounts.User
 

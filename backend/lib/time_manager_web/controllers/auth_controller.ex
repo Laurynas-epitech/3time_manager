@@ -13,7 +13,7 @@ defmodule TimeManagerWeb.AuthController do
 
   action_fallback TimeManagerWeb.FallbackController
 
-  def register(conn, %{"user" => user_params}) do
+  def register(conn, %{"user" => user_params}) when is_map(user_params) do
     # Public registration always creates an employee, whatever the body says.
     params = Map.take(user_params, ["username", "email", "password"])
 

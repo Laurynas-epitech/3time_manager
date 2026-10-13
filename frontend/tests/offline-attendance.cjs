@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 
 const base = process.env.OFFLINE_TEST_URL || 'http://127.0.0.1:5173';
-const api = process.env.OFFLINE_TEST_API || 'http://127.0.0.1:4000/api';
+const api = process.env.OFFLINE_TEST_API || `${base}/api`;
 const password = crypto.randomBytes(16).toString('hex');
 
 async function queue(page) {
