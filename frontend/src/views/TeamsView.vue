@@ -6,7 +6,9 @@
         {{
           isEmployee
             ? "The teams you belong to. Only managers and admins can change them."
-            : "One manager per team. People can be on more than one."
+            : isAdmin
+              ? "One manager per team. People can be on more than one."
+              : "Add people already assigned to your teams. Ask an admin to assign someone new."
         }}
       </p>
     </header>
@@ -213,7 +215,7 @@
 </template>
 
 <script>
-import api, { errorMessage } from "../api";
+import api, { errorMessage, fetchAll, fetchTeams } from "../api";
 import auth from "../auth";
 
 export default {
@@ -259,8 +261,8 @@ export default {
       try {
         // Employees only read their teams: no user directory needed.
         const [teams, users] = await Promise.all([
-          api.get("/teams"),
-          this.isEmployee ? null : api.get("/users", { params: { scope: "all" } }),
+          fetchTeams(),
+          this.isEmployee ? null : fetchAll("/users"),
         ]);
         this.teams = teams.data.data;
         this.directory = users?.data.data ?? [];
@@ -276,11 +278,15 @@ export default {
 
     nonMembers(team) {
       const ids = new Set(team.members.map((m) => m.id));
-      return this.directory.filter((u) => !ids.has(u.id));
+      return this.directory.filter((u) => !ids.has(u.id) && (this.isAdmin || u.id !== this.me.id));
     },
 
     replaceTeam(updated) {
-      this.teams = this.teams.map((t) => (t.id === updated.id ? updated : t));
+      if (updated.members_has_more) {
+        void this.load();
+      } else {
+        this.teams = this.teams.map((t) => (t.id === updated.id ? updated : t));
+      }
     },
 
     async createTeam() {

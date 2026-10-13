@@ -1,6 +1,6 @@
 # Authentication integration and deployment
 
-Local main now includes GitHub authentication PR #2 plus integration fixes. PostgreSQL administrator credentials and application login credentials are different.
+Historical October 8 authentication integration record. Current security rules and verification are documented in [security](../security.md) and [testing](../testing.md). PostgreSQL administrator credentials and application login credentials are different.
 
 ## Verified behavior
 
@@ -8,7 +8,7 @@ Local main now includes GitHub authentication PR #2 plus integration fixes. Post
 
 The secured Compose uses the existing secure volume and limited application database role. Migration and admin initialization run separately with administrator DB access. The long-running backend receives only the application DB password and JWT signing secret. No default administrator password or signing key is deployed, and deployment SQL debug logging is disabled. Duplicate membership adds are idempotent; demoted managers lose team-membership control; logout requires the JWT and matching CSRF header.
 
-The built frontend serves static Vue assets, handles SPA deep links, and proxies /api to the backend on the internal network. This avoids cross-origin authentication on the existing port-80 public URL. Local npm development can still target port 4000 via src/api.js or VITE_API_URL.
+The built frontend serves static Vue assets, handles SPA deep links, and proxies /api to the backend on the internal network. This avoids cross-origin authentication on the existing port-80 public URL. Local development now proxies same-origin /api to localhost:4000; VITE_API_URL remains an explicit override.
 
 ## Production deployment completed — October 8, 2026
 

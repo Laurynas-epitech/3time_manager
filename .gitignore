@@ -58,3 +58,10 @@ test-results/
 .cache/
 .npm/
 .codex/
+
+# Local assistant instructions and tracking; kept locally, excluded from submissions
+AGENTS.md
+/MEMORY.md
+/.local-notes/
+/SECURITY_REVIEW_*.md
+/SECURITY_FIXES_*.md

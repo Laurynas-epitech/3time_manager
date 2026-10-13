@@ -13,7 +13,7 @@ defmodule TimeManagerWeb.TeamController do
     teams =
       if Authorization.admin?(current),
         do: Teams.list_teams(params),
-        else: Teams.list_teams_for_user(current.id)
+        else: Teams.list_teams_for_user(current.id, params)
 
     render(conn, :index, teams: teams)
   end
@@ -24,9 +24,22 @@ defmodule TimeManagerWeb.TeamController do
 
     visible? =
       Authorization.admin?(current) or team.manager_id == current.id or
-        Enum.any?(team.members, &(&1.id == current.id))
+        Teams.member?(team.id, current.id)
 
     if visible?, do: render(conn, :show, team: team), else: {:error, :forbidden}
+  end
+
+  def members(conn, %{"id" => id} = params) do
+    current = conn.assigns.current_user
+    team = Teams.get_team!(id)
+
+    if Authorization.admin?(current) or team.manager_id == current.id or
+         Teams.member?(team.id, current.id) do
+      users = Teams.list_members(team.id, params)
+      json(conn, %{data: Enum.map(users, &TimeManagerWeb.UserJSON.data/1)})
+    else
+      {:error, :forbidden}
+    end
   end
 
   # Admin only (see router)
@@ -62,6 +75,7 @@ defmodule TimeManagerWeb.TeamController do
 
     with :ok <- authorize(Authorization.can_manage_team?(conn.assigns.current_user, team)),
          user when not is_nil(user) <- Accounts.get_user(Authorization.to_int(user_id)),
+         :ok <- authorize(Authorization.can_assign_team_member?(conn.assigns.current_user, user)),
          {:ok, team} <- Teams.add_member(team, user) do
       render(conn, :show, team: team)
     else

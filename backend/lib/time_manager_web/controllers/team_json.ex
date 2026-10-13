@@ -10,6 +10,7 @@ defmodule TimeManagerWeb.TeamJSON do
     %{
       id: team.id,
       name: team.name,
+      members_has_more: team.members_has_more,
       manager: user(team.manager),
       members: Enum.map(team.members, &UserJSON.data/1)
     }

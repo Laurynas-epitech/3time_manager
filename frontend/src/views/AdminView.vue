@@ -140,7 +140,7 @@
 </template>
 
 <script>
-import api, { errorMessage } from "../api";
+import api, { errorMessage, fetchAll } from "../api";
 import auth from "../auth";
 
 const emptyForm = () => ({ username: "", email: "", password: "", role: "employee" });
@@ -171,7 +171,7 @@ export default {
   methods: {
     async load() {
       try {
-        const [users, roles] = await Promise.all([api.get("/users"), api.get("/roles")]);
+        const [users, roles] = await Promise.all([fetchAll("/users"), api.get("/roles")]);
         this.users = users.data.data;
         this.roles = roles.data.data;
       } catch (error) {

@@ -1,15 +1,14 @@
 defmodule TimeManagerWeb.UserController do
   use TimeManagerWeb, :controller
 
-  alias TimeManager.{Accounts, Teams}
+  alias TimeManager.Accounts
   alias TimeManager.Accounts.User
   alias TimeManagerWeb.Authorization
 
   action_fallback TimeManagerWeb.FallbackController
 
   # admin: everybody / manager: self + team members / employee: self
-  # `?scope=all` lets managers see the whole directory (to add people to a team);
-  # it does not give access to anyone's clocks or working times.
+  # Managers cannot expand their directory scope through query parameters.
   def index(conn, params) do
     current = conn.assigns.current_user
     filters = Map.take(params, ["email", "username", "limit", "offset"])
@@ -19,11 +18,8 @@ defmodule TimeManagerWeb.UserController do
         Authorization.admin?(current) ->
           filters
 
-        Authorization.manager?(current) and params["scope"] == "all" ->
-          filters
-
         Authorization.manager?(current) ->
-          Map.put(filters, "ids", [current.id | Teams.managed_user_ids(current.id)])
+          Map.put(filters, "manager_id", current.id)
 
         true ->
           Map.put(filters, "ids", [current.id])

@@ -1,10 +1,10 @@
 import axios from "axios";
+import { collectPages } from "./services/pagination";
 
-// Same host as the page, port 4000. Works on localhost and on the server
-// (57.130.61.152) without changing the code. Can be overridden with VITE_API_URL.
+// Same-origin proxy keeps credentials on the page's HTTPS connection.
 const baseURL =
   import.meta.env.VITE_API_URL ||
-  `${window.location.protocol}//${window.location.hostname}:4000/api`;
+  "/api";
 
 export const apiScope = baseURL;
 
@@ -69,3 +69,25 @@ export function errorMessage(error, fallback = "Something went wrong.") {
 }
 
 export default api;
+
+export async function fetchAll(path, { params = {}, reversePages = false, check = () => {} } = {}) {
+  const data = await collectPages(async paging => {
+    check();
+    const response = await api.get(path, { params: { ...params, ...paging } });
+    check();
+    return response.data.data;
+  }, { reversePages });
+  return { data: { data } };
+}
+
+export async function fetchTeams() {
+  const response = await fetchAll('/teams');
+  // Hydrate large teams sequentially to avoid a burst of member requests.
+  for (const team of response.data.data) {
+    if (team.members_has_more) {
+      team.members = (await fetchAll(`/teams/${team.id}/members`)).data.data;
+      team.members_has_more = false;
+    }
+  }
+  return response;
+}

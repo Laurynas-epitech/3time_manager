@@ -141,7 +141,7 @@
 </template>
 
 <script>
-import api, { errorMessage } from "../api";
+import api, { errorMessage, fetchAll, fetchTeams } from "../api";
 import auth from "../auth";
 import { getAttendance } from "../services/attendance";
 import HoursReport from "../components/HoursReport.vue";
@@ -259,8 +259,8 @@ export default {
 
       try {
         const [teams, users] = await Promise.all([
-          api.get("/teams"),
-          this.isAdmin ? api.get("/users") : null,
+          fetchTeams(),
+          this.isAdmin ? fetchAll("/users") : null,
         ]);
 
         this.teams = teams.data.data ?? [];

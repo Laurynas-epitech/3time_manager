@@ -1,5 +1,18 @@
 import Config
 
+# Trust only explicitly configured proxy peers, never arbitrary request headers.
+trusted_proxy_ips =
+  System.get_env("TRUSTED_PROXY_IPS", "")
+  |> String.split(",", trim: true)
+  |> Enum.map(fn ip ->
+    case :inet.parse_address(ip |> String.trim() |> String.to_charlist()) do
+      {:ok, address} -> address
+      _ -> raise "TRUSTED_PROXY_IPS must contain comma-separated IP addresses"
+    end
+  end)
+
+config :time_manager, :trusted_proxy_ips, trusted_proxy_ips
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration

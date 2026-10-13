@@ -53,6 +53,6 @@ Configuration backups are in `/var/backups/time-manager-https-<UTC timestamp>/`.
 - Rollback configuration backup: `/var/backups/time-manager-https-20261009T140237Z/`.
 - Current certificate expires October 16, 2026 at 07:04:23 Europe/Paris (05:04:23 UTC).
 - Renewal wrapper now uses `--no-random-sleep-on-renew`; the timer supplies the randomized delay. The initial dry run was already sleeping under the previous wrapper when this improvement was installed. Its simulated renewal succeeded and Nginx validation/reload passed; the four-hour renewal timer is enabled and active.
-- The subsequent October 9 offline application release rebuilt frontend/backend and applied the UUID migration. Live offline reopening and automatic synchronization passed; see OFFLINE_SETUP.md.
+- The subsequent October 9 offline application release rebuilt frontend/backend and applied the UUID migration. Live offline reopening and automatic synchronization passed; see ../features/offline.md.
 
 Status: HTTPS deployed, trusted TLS/browser checks passed, renewal dry run passed and automatic renewal timer enabled/active. The subsequent offline application release is also deployed and verified.

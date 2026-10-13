@@ -43,7 +43,7 @@ defmodule TimeManagerWeb.PermissionsTest do
         |> length()
       end
 
-      assert directory.(ctx.manager) == 4
+      assert directory.(ctx.manager) == 2
       assert directory.(ctx.employee) == 1
     end
 
@@ -142,13 +142,35 @@ defmodule TimeManagerWeb.PermissionsTest do
 
       manager = build_conn() |> log_in(ctx.manager)
 
+      assert manager
+             |> post(~p"/api/teams/#{ctx.team.id}/members/#{ctx.outsider.id}")
+             |> json_response(403)
+
+      assert build_conn()
+             |> log_in(ctx.manager)
+             |> get(~p"/api/workingtime/#{ctx.outsider.id}")
+             |> json_response(403)
+
       assert %{"members" => members} =
-               manager
+               build_conn()
+               |> log_in(ctx.admin)
                |> post(~p"/api/teams/#{ctx.team.id}/members/#{ctx.outsider.id}")
                |> json_response(200)
                |> Map.fetch!("data")
 
       assert length(members) == 2
+
+      # Once an admin assigned the employee, the manager may reuse that assignment.
+      {:ok, second_team} =
+        Teams.create_team(%{"name" => "Same manager", "manager_id" => ctx.manager.id})
+
+      assert %{"members" => members} =
+               manager
+               |> post(~p"/api/teams/#{second_team.id}/members/#{ctx.outsider.id}")
+               |> json_response(200)
+               |> Map.fetch!("data")
+
+      assert length(members) == 1
 
       assert manager
              |> post(~p"/api/teams/#{other_team_id}/members/#{ctx.outsider.id}")

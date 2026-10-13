@@ -14,6 +14,7 @@ defmodule TimeManagerWeb.Router do
   # JWT cookie + x-csrf-token header -> conn.assigns.current_user
   pipeline :auth do
     plug TimeManagerWeb.Plugs.Authenticate
+    plug TimeManagerWeb.Plugs.RateLimit, :writes
   end
 
   pipeline :admin do
@@ -59,6 +60,7 @@ defmodule TimeManagerWeb.Router do
     # TEAMS
     get "/teams", TeamController, :index
     get "/teams/:id", TeamController, :show
+    get "/teams/:id/members", TeamController, :members
     post "/teams/:team_id/members/:user_id", TeamController, :add_member
     delete "/teams/:team_id/members/:user_id", TeamController, :remove_member
 
