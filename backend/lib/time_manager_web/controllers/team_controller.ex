@@ -42,6 +42,22 @@ defmodule TimeManagerWeb.TeamController do
     end
   end
 
+  def member_candidates(conn, %{"id" => id} = params) do
+    current = conn.assigns.current_user
+    team = Teams.get_team!(id)
+
+    with :ok <- authorize(Authorization.can_manage_team?(current, team)) do
+      filters = Map.take(params, ["limit", "offset"])
+      filters =
+        if Authorization.admin?(current),
+          do: filters,
+          else: Map.put(filters, "member_candidates_for", current.id)
+
+      users = Accounts.list_users(filters)
+      json(conn, %{data: Enum.map(users, &TimeManagerWeb.UserJSON.data/1)})
+    end
+  end
+
   def report(conn, %{"id" => id} = params) do
     team = Teams.get_team!(id)
 

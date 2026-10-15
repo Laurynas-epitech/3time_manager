@@ -53,9 +53,11 @@ defmodule TimeManagerWeb.Authorization do
     admin?(current) or (manager?(current) and Teams.manages_team?(current.id, team))
   end
 
-  @doc "Only admins can grant access to a new person; managers can reuse existing assignments."
+  @doc "Managers can enroll employees or reuse existing managed assignments; admins can enroll anyone."
   def can_assign_team_member?(%User{} = current, %User{} = target) do
-    admin?(current) or (manager?(current) and Teams.manages_user?(current.id, target.id))
+    admin?(current) or
+      (manager?(current) and
+         (Accounts.role_name(target) == "employee" or Teams.manages_user?(current.id, target.id)))
   end
 
   def to_int(value) when is_integer(value), do: value

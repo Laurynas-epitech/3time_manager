@@ -61,6 +61,7 @@ defmodule TimeManagerWeb.Router do
     get "/teams", TeamController, :index
     get "/teams/:id", TeamController, :show
     get "/teams/:id/members", TeamController, :members
+    get "/teams/:id/member-candidates", TeamController, :member_candidates
     get "/teams/:id/report", TeamController, :report
     post "/teams/:team_id/members/:user_id", TeamController, :add_member
     delete "/teams/:team_id/members/:user_id", TeamController, :remove_member

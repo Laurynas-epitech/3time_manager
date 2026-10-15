@@ -8,7 +8,7 @@
             ? "The teams you belong to. Only managers and admins can change them."
             : isAdmin
               ? "One manager per team. People can be on more than one."
-              : "Add people already assigned to your teams. Ask an admin to assign someone new."
+              : "Add employees to the teams you manage."
         }}
       </p>
     </header>
@@ -237,6 +237,7 @@ export default {
     return {
       teams: [],
       directory: [],
+      memberCandidates: {},
       teamPage: 1,
       memberSearch: {},
       newTeam: { name: "", manager_id: null },
@@ -278,11 +279,16 @@ export default {
         // Employees only read their teams: no user directory needed.
         const [teams, users] = await Promise.all([
           fetchTeams(),
-          this.isEmployee ? null : fetchAll("/users"),
+          this.isAdmin ? fetchAll("/users") : null,
         ]);
         this.teams = teams.data.data;
         this.teamPage = Math.min(this.teamPage, this.teamPageCount);
         this.directory = users?.data.data ?? [];
+        const candidates = await Promise.all(this.teams.filter(team => this.canManage(team)).map(async team => {
+          const response = await fetchAll(`/teams/${team.id}/member-candidates`);
+          return [team.id, response.data.data];
+        }));
+        this.memberCandidates = Object.fromEntries(candidates);
       } catch (error) {
         this.error = errorMessage(error, "Could not load teams.");
       }
@@ -296,7 +302,7 @@ export default {
     nonMembers(team) {
       const ids = new Set(team.members.map((m) => m.id));
       const query = (this.memberSearch[team.id] || "").toLowerCase();
-      return this.directory.filter((u) => !ids.has(u.id) && (this.isAdmin || u.id !== this.me.id)
+      return (this.memberCandidates[team.id] || []).filter((u) => !ids.has(u.id) && (this.isAdmin || u.id !== this.me.id)
         && `${u.username} ${u.email}`.toLowerCase().includes(query)).slice(0, 50);
     },
 

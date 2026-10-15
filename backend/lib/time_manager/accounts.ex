@@ -46,6 +46,12 @@ defmodule TimeManager.Accounts do
   defp filter_users({"username", name}, query) when is_binary(name),
     do: where(query, [u], u.username == ^name)
 
+  defp filter_users({"member_candidates_for", manager_id}, query) do
+    members = TimeManager.Teams.managed_user_query(manager_id)
+    employee_role = get_role_by_name("employee")
+    where(query, [u], u.role_id == ^employee_role.id or u.id in subquery(members))
+  end
+
   defp filter_users(_, query), do: query
 
   def get_user!(id), do: User |> Repo.get!(id) |> Repo.preload(:role)

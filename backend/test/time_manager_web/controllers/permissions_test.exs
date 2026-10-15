@@ -142,25 +142,20 @@ defmodule TimeManagerWeb.PermissionsTest do
 
       manager = build_conn() |> log_in(ctx.manager)
 
-      assert manager
-             |> post(~p"/api/teams/#{ctx.team.id}/members/#{ctx.outsider.id}")
-             |> json_response(403)
-
       assert build_conn()
              |> log_in(ctx.manager)
              |> get(~p"/api/workingtime/#{ctx.outsider.id}")
              |> json_response(403)
 
       assert %{"members" => members} =
-               build_conn()
-               |> log_in(ctx.admin)
+               manager
                |> post(~p"/api/teams/#{ctx.team.id}/members/#{ctx.outsider.id}")
                |> json_response(200)
                |> Map.fetch!("data")
 
       assert length(members) == 2
 
-      # Once an admin assigned the employee, the manager may reuse that assignment.
+      # A manager may also add the employee to another team they manage.
       {:ok, second_team} =
         Teams.create_team(%{"name" => "Same manager", "manager_id" => ctx.manager.id})
 
@@ -175,6 +170,28 @@ defmodule TimeManagerWeb.PermissionsTest do
       assert manager
              |> post(~p"/api/teams/#{other_team_id}/members/#{ctx.outsider.id}")
              |> json_response(403)
+    end
+
+    test "member candidates include new employees and enforce team ownership", ctx do
+      candidates = build_conn()
+        |> log_in(ctx.manager)
+        |> get(~p"/api/teams/#{ctx.team.id}/member-candidates")
+        |> json_response(200)
+        |> Map.fetch!("data")
+
+      ids = Enum.map(candidates, & &1["id"])
+      assert ctx.outsider.id in ids
+      refute ctx.admin.id in ids
+
+      assert build_conn() |> log_in(ctx.employee)
+        |> get(~p"/api/teams/#{ctx.team.id}/member-candidates") |> json_response(403)
+
+      {:ok, other} = Teams.create_team(%{"name" => "Other"})
+      assert build_conn() |> log_in(ctx.manager)
+        |> get(~p"/api/teams/#{other.id}/member-candidates") |> json_response(403)
+
+      assert build_conn() |> log_in(ctx.manager)
+        |> post(~p"/api/teams/#{ctx.team.id}/members/#{ctx.admin.id}") |> json_response(403)
     end
 
     test "a team manager must have the manager or admin role", ctx do
